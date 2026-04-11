@@ -1,0 +1,240 @@
+{
+  "project": "GitBrief",
+  "version": "1.0.0",
+  "backlog": [
+    {
+      "id": "BL-001",
+      "title": "Project scaffolding and tooling",
+      "description": "Initialize Next.js 15 with TypeScript, Tailwind CSS v4, Vitest, ESLint. Configure vitest.config.ts and CI-ready scripts.",
+      "acceptance_criteria": [
+        "npm run dev starts without errors",
+        "npm run build produces a production build",
+        "npm run test runs Vitest (exit 0)",
+        "npm run lint runs ESLint with zero errors",
+        "npm run typecheck runs tsc --noEmit with zero errors",
+        "Tailwind utility classes render correctly"
+      ],
+      "priority": "critical",
+      "estimated_effort": "1h",
+      "dependencies": [],
+      "test_cases": ["T-001"]
+    },
+    {
+      "id": "BL-002",
+      "title": "PR URL parser",
+      "description": "Pure function parsePrUrl(input) that extracts {owner, repo, pullNumber} from a GitHub PR URL. Handles variations and rejects invalid input.",
+      "acceptance_criteria": [
+        "Parses standard GitHub PR URLs",
+        "Handles trailing slashes, query strings, fragments",
+        "Rejects non-GitHub URLs with descriptive error",
+        "Rejects non-PR GitHub URLs",
+        "Returns typed PrReference object"
+      ],
+      "priority": "critical",
+      "estimated_effort": "30m",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-002", "T-003", "T-004"]
+    },
+    {
+      "id": "BL-003",
+      "title": "GitHub API client — PR metadata",
+      "description": "Fetch PR metadata (title, body, author, branches, state) from GitHub REST API v3. Optional auth token for higher rate limits.",
+      "acceptance_criteria": [
+        "Fetches from GET /repos/{owner}/{repo}/pulls/{pull_number}",
+        "Returns typed PrMetadata object",
+        "Sends Authorization header when token provided",
+        "Throws GitHubApiError on 404 and 403",
+        "Sets correct Accept header"
+      ],
+      "priority": "critical",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-005", "T-006", "T-007"]
+    },
+    {
+      "id": "BL-004",
+      "title": "GitHub API client — PR diff",
+      "description": "Extend GitHub client to fetch raw unified diff for a PR using the diff media type.",
+      "acceptance_criteria": [
+        "Fetches diff with Accept: application/vnd.github.v3.diff",
+        "Returns raw diff string",
+        "Handles empty diffs"
+      ],
+      "priority": "critical",
+      "estimated_effort": "30m",
+      "dependencies": ["BL-003"],
+      "test_cases": ["T-008", "T-009"]
+    },
+    {
+      "id": "BL-005",
+      "title": "Diff processing utilities",
+      "description": "Pure functions: truncateDiff (char limit at hunk boundaries), filterDiff (remove lock/binary files), extractDiffStats (count files/insertions/deletions).",
+      "acceptance_criteria": [
+        "truncateDiff cuts at hunk boundaries, appends [truncated] marker",
+        "filterDiff removes lock files, binary markers, configurable patterns",
+        "extractDiffStats returns accurate counts",
+        "All functions are pure"
+      ],
+      "priority": "critical",
+      "estimated_effort": "1h",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-010", "T-011", "T-012", "T-013"]
+    },
+    {
+      "id": "BL-006",
+      "title": "Claude prompt builder",
+      "description": "Pure function buildAnalysisPrompt that takes PrMetadata and processed diff, returns system+user message pair instructing Claude to return structured JSON.",
+      "acceptance_criteria": [
+        "Returns {system, user} message pair",
+        "System prompt defines JSON schema",
+        "User message includes PR metadata and diff",
+        "Handles empty PR description gracefully"
+      ],
+      "priority": "critical",
+      "estimated_effort": "30m",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-014", "T-015"]
+    },
+    {
+      "id": "BL-007",
+      "title": "Claude API client",
+      "description": "Client using @anthropic-ai/sdk to send analysis prompt and parse structured JSON response. Uses claude-sonnet-4-20250514.",
+      "acceptance_criteria": [
+        "Sends messages via Anthropic SDK",
+        "Parses text response as JSON into AnalysisResult",
+        "Throws ClaudeParseError on invalid JSON",
+        "Throws ClaudeApiError on SDK errors",
+        "Uses max_tokens: 4096"
+      ],
+      "priority": "critical",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-006"],
+      "test_cases": ["T-016", "T-017", "T-018"]
+    },
+    {
+      "id": "BL-008",
+      "title": "POST /api/analyze route",
+      "description": "Next.js API route orchestrating the full flow: validate input, parse URL, fetch PR, process diff, call Claude, return analysis.",
+      "acceptance_criteria": [
+        "POST accepts {url: string}",
+        "Returns 200 with full AnalysisResponse on success",
+        "Returns 400 for invalid/missing URL",
+        "Returns 502 for GitHub/Claude failures",
+        "All errors return {error, code} shape"
+      ],
+      "priority": "critical",
+      "estimated_effort": "1h",
+      "dependencies": ["BL-002", "BL-004", "BL-005", "BL-007"],
+      "test_cases": ["T-019", "T-020", "T-021", "T-022"]
+    },
+    {
+      "id": "BL-009",
+      "title": "UI — PR URL input form",
+      "description": "PrUrlForm component: text input + submit button. Client-side URL validation. Uses shadcn/ui Input and Button.",
+      "acceptance_criteria": [
+        "Renders input and submit button",
+        "Disables submit when empty",
+        "Shows inline validation error for invalid URLs on blur",
+        "Calls onSubmit with trimmed URL",
+        "Disables when isLoading is true",
+        "Enter key submits"
+      ],
+      "priority": "high",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-001", "BL-002"],
+      "test_cases": ["T-023", "T-024"]
+    },
+    {
+      "id": "BL-010",
+      "title": "UI — Loading state",
+      "description": "AnalysisLoading component: skeleton/spinner with status message while analysis is in progress.",
+      "acceptance_criteria": [
+        "Shows spinner or skeleton UI",
+        "Displays status text",
+        "Has aria-busy and aria-live attributes"
+      ],
+      "priority": "high",
+      "estimated_effort": "20m",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-025"]
+    },
+    {
+      "id": "BL-011",
+      "title": "UI — Analysis results display",
+      "description": "AnalysisResults component: renders summary, key changes, risks (color-coded by severity), and suggestions. Uses shadcn/ui Card and Badge.",
+      "acceptance_criteria": [
+        "Renders summary paragraph",
+        "Renders key changes with file references",
+        "Renders risks with severity badges",
+        "Renders suggestions list",
+        "Shows PR metadata header",
+        "Handles empty arrays gracefully",
+        "Responsive layout"
+      ],
+      "priority": "high",
+      "estimated_effort": "1h",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-026", "T-027"]
+    },
+    {
+      "id": "BL-012",
+      "title": "UI — Error display",
+      "description": "ErrorDisplay component: user-friendly error messages mapped from error codes, with retry button.",
+      "acceptance_criteria": [
+        "Displays error in styled alert",
+        "Maps error codes to friendly messages",
+        "Has retry button calling onRetry",
+        "Has role=alert"
+      ],
+      "priority": "high",
+      "estimated_effort": "30m",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-028"]
+    },
+    {
+      "id": "BL-013",
+      "title": "Main page — full flow integration",
+      "description": "Wire all components on page.tsx. State machine: idle -> loading -> success/error. Calls POST /api/analyze.",
+      "acceptance_criteria": [
+        "Renders form in idle state",
+        "Shows loading on submit",
+        "Shows results on success",
+        "Shows error on failure",
+        "Retry resets to idle with URL pre-filled"
+      ],
+      "priority": "high",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-008", "BL-009", "BL-010", "BL-011", "BL-012"],
+      "test_cases": ["T-029", "T-030"]
+    },
+    {
+      "id": "BL-014",
+      "title": "CI/CD pipeline",
+      "description": "GitHub Actions: CI (lint, typecheck, test on PRs) and CD (deploy to Vercel on merge to main).",
+      "acceptance_criteria": [
+        "CI runs on PRs to develop and main",
+        "CI runs lint, typecheck, test in parallel",
+        "CD triggers on push to main",
+        "CD deploys to Vercel"
+      ],
+      "priority": "high",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-001"],
+      "test_cases": ["T-031"]
+    },
+    {
+      "id": "BL-015",
+      "title": "Polish — rate limiting, metadata, README",
+      "description": "In-memory rate limiter (10 req/min per IP), OpenGraph tags, favicon, comprehensive README.",
+      "acceptance_criteria": [
+        "API returns 429 over rate limit",
+        "Page has OpenGraph tags",
+        "README covers setup, env vars, dev, testing, deployment"
+      ],
+      "priority": "medium",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-013", "BL-014"],
+      "test_cases": ["T-032", "T-033"]
+    }
+  ]
+}
