@@ -44,3 +44,68 @@ export async function analyzeWithClaude(
     );
   }
 }
+
+export async function analyzeWithClaudeStream(
+  prompt: AnalysisPrompt,
+  apiKey: string,
+  onChunk: (text: string) => void,
+): Promise<AnalysisResult> {
+  const response = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      stream: true,
+      system: prompt.system,
+      messages: [{ role: "user", content: prompt.user }],
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json();
+    throw new ClaudeApiError(
+      body.error?.message || `Claude API error: ${response.status}`,
+    );
+  }
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let accumulated = "";
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop()!;
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      try {
+        const data = JSON.parse(line.slice(6));
+        if (data.type === "content_block_delta" && data.delta?.text) {
+          accumulated += data.delta.text;
+          onChunk(data.delta.text);
+        }
+      } catch {
+        // skip non-JSON data lines
+      }
+    }
+  }
+
+  try {
+    return JSON.parse(accumulated) as AnalysisResult;
+  } catch {
+    throw new ClaudeParseError(
+      "Claude returned invalid JSON from stream.",
+      accumulated,
+    );
+  }
+}
