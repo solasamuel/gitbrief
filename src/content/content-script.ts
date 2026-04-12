@@ -12,16 +12,20 @@ export function isPrPage(url: string): boolean {
   return PR_URL_PATTERN.test(url);
 }
 
+// GitHub's DOM changes over time — try multiple selectors
+const HEADER_SELECTORS = [
+  ".gh-header-actions",                    // classic layout
+  ".pr-header-actions",                    // newer layout
+  "#partial-discussion-header .gh-header-show .flex-md-row",
+  ".gh-header-meta",                       // fallback: PR meta area
+];
+
 export function injectToggleButton(): void {
   if (document.getElementById("gitbrief-toggle")) return;
-
-  const target = document.querySelector(".gh-header-actions");
-  if (!target) return;
 
   const btn = document.createElement("button");
   btn.id = "gitbrief-toggle";
   btn.textContent = "GitBrief";
-  btn.className = "btn btn-sm";
   btn.addEventListener("click", () => {
     if (isSidebarMounted()) {
       unmountSidebar();
@@ -29,7 +33,32 @@ export function injectToggleButton(): void {
       mountSidebar();
     }
   });
-  target.prepend(btn);
+
+  // Try to inject into GitHub's header
+  for (const selector of HEADER_SELECTORS) {
+    const target = document.querySelector(selector);
+    if (target) {
+      btn.className = "btn btn-sm";
+      target.prepend(btn);
+      return;
+    }
+  }
+
+  // Fallback: floating button in bottom-right corner
+  btn.style.position = "fixed";
+  btn.style.bottom = "20px";
+  btn.style.right = "20px";
+  btn.style.zIndex = "2147483646";
+  btn.style.padding = "8px 16px";
+  btn.style.fontSize = "13px";
+  btn.style.fontWeight = "600";
+  btn.style.color = "#fff";
+  btn.style.backgroundColor = "#2da44e";
+  btn.style.border = "none";
+  btn.style.borderRadius = "6px";
+  btn.style.cursor = "pointer";
+  btn.style.fontFamily = "system-ui, sans-serif";
+  document.body.appendChild(btn);
 }
 
 export function removeToggleButton(): void {

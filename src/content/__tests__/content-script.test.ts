@@ -77,11 +77,13 @@ describe("T-022: Content script detects PR pages and injects toggle button", () 
       expect(buttons.length).toBe(1);
     });
 
-    it("does nothing if .gh-header-actions is not in the DOM", () => {
+    it("creates a floating button if no GitHub header element exists", () => {
       injectToggleButton();
 
       const btn = document.getElementById("gitbrief-toggle");
-      expect(btn).toBeNull();
+      expect(btn).not.toBeNull();
+      expect(btn!.style.position).toBe("fixed");
+      expect(document.body.contains(btn)).toBe(true);
     });
   });
 
