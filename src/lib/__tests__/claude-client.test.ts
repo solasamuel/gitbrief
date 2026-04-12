@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { analyzeWithClaude } from "@/lib/claude-client";
+import { analyzeWithClaude, analyzeWithClaudeStream } from "@/lib/claude-client";
 import { ClaudeApiError, ClaudeParseError } from "@/lib/errors";
 import type { AnalysisPrompt } from "@/lib/prompt-builder";
 
@@ -199,6 +199,128 @@ describe("T-018: Claude client throws ClaudeApiError on HTTP errors", () => {
 
     await expect(
       analyzeWithClaude(MOCK_PROMPT, "sk-ant-test-key")
+    ).rejects.toThrow(ClaudeApiError);
+  });
+});
+
+// --- Streaming tests ---
+
+function createMockSSEStream(events: string[]): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  const chunks = events.map((e) => encoder.encode(e + "\n\n"));
+  let index = 0;
+  return new ReadableStream({
+    pull(controller) {
+      if (index < chunks.length) {
+        controller.enqueue(chunks[index++]);
+      } else {
+        controller.close();
+      }
+    },
+  });
+}
+
+describe("T-029: analyzeWithClaudeStream sends stream:true and parses SSE", () => {
+  it("sends stream:true in the request body", async () => {
+    const sseEvents = [
+      `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: JSON.stringify(MOCK_ANALYSIS) } })}`,
+      `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}`,
+    ];
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: createMockSSEStream(sseEvents),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await analyzeWithClaudeStream(MOCK_PROMPT, "sk-ant-test-key", () => {});
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.stream).toBe(true);
+  });
+
+  it("calls onChunk for each text delta", async () => {
+    const part1 = '{"summary":"Part 1",';
+    const part2 = '"keyChanges":[],"risks":[],"suggestions":[]}';
+
+    const sseEvents = [
+      `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: part1 } })}`,
+      `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: part2 } })}`,
+      `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}`,
+    ];
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: createMockSSEStream(sseEvents),
+    }));
+
+    const onChunk = vi.fn();
+    await analyzeWithClaudeStream(MOCK_PROMPT, "sk-ant-test-key", onChunk);
+
+    expect(onChunk).toHaveBeenCalledWith(part1);
+    expect(onChunk).toHaveBeenCalledWith(part2);
+    expect(onChunk).toHaveBeenCalledTimes(2);
+  });
+
+  it("parses accumulated JSON into AnalysisResult on completion", async () => {
+    const jsonStr = JSON.stringify(MOCK_ANALYSIS);
+    const sseEvents = [
+      `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: jsonStr } })}`,
+      `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}`,
+    ];
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: createMockSSEStream(sseEvents),
+    }));
+
+    const result = await analyzeWithClaudeStream(MOCK_PROMPT, "sk-ant-test-key", () => {});
+    expect(result).toEqual(MOCK_ANALYSIS);
+  });
+
+  it("throws ClaudeParseError when accumulated text is not valid JSON", async () => {
+    const sseEvents = [
+      `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "not json at all" } })}`,
+      `event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}`,
+    ];
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: createMockSSEStream(sseEvents),
+    }));
+
+    await expect(
+      analyzeWithClaudeStream(MOCK_PROMPT, "sk-ant-test-key", () => {})
+    ).rejects.toThrow(ClaudeParseError);
+  });
+});
+
+describe("T-030: analyzeWithClaudeStream throws on HTTP errors", () => {
+  it("throws ClaudeApiError on 401", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ error: { message: "Invalid API key" } }),
+    }));
+
+    await expect(
+      analyzeWithClaudeStream(MOCK_PROMPT, "bad-key", () => {})
+    ).rejects.toThrow(ClaudeApiError);
+  });
+
+  it("throws ClaudeApiError on 429", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: () => Promise.resolve({ error: { message: "Rate limited" } }),
+    }));
+
+    await expect(
+      analyzeWithClaudeStream(MOCK_PROMPT, "sk-ant-test-key", () => {})
     ).rejects.toThrow(ClaudeApiError);
   });
 });
