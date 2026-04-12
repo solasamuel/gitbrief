@@ -1,3 +1,5 @@
+import { mountSidebar, unmountSidebar, isSidebarMounted } from "./sidebar/index";
+
 const PR_URL_PATTERN = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/;
 
 let lastCheckedUrl = "";
@@ -20,20 +22,19 @@ export function injectToggleButton(): void {
   btn.id = "gitbrief-toggle";
   btn.textContent = "GitBrief";
   btn.className = "btn btn-sm";
-  btn.addEventListener("click", toggleSidebar);
+  btn.addEventListener("click", () => {
+    if (isSidebarMounted()) {
+      unmountSidebar();
+    } else {
+      mountSidebar();
+    }
+  });
   target.prepend(btn);
 }
 
 export function removeToggleButton(): void {
   const btn = document.getElementById("gitbrief-toggle");
   if (btn) btn.remove();
-}
-
-function toggleSidebar(): void {
-  const sidebar = document.getElementById("gitbrief-root");
-  if (sidebar) {
-    sidebar.style.display = sidebar.style.display === "none" ? "block" : "none";
-  }
 }
 
 export function checkForPrPage(url: string): void {
@@ -44,23 +45,21 @@ export function checkForPrPage(url: string): void {
     injectToggleButton();
   } else {
     removeToggleButton();
+    unmountSidebar();
   }
 }
 
 function init(): void {
   checkForPrPage(window.location.href);
 
-  // GitHub uses Turbo Drive for SPA navigation
   document.addEventListener("turbo:load", () => {
     checkForPrPage(window.location.href);
   });
 
-  // Back/forward navigation
   window.addEventListener("popstate", () => {
     checkForPrPage(window.location.href);
   });
 
-  // Fallback: watch title changes for SPA navigation
   const titleEl = document.querySelector("title");
   if (titleEl) {
     const observer = new MutationObserver(() => {
@@ -70,7 +69,6 @@ function init(): void {
   }
 }
 
-// Only run init in browser context (not in tests)
 declare const __VITEST__: boolean | undefined;
 if (typeof window !== "undefined" && typeof __VITEST__ === "undefined") {
   init();
