@@ -73,9 +73,12 @@ Include `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>` i
 
 ## Extension Architecture
 
-- API keys are user-provided, stored in `chrome.storage.local`
-- API calls (GitHub, Anthropic) made directly from popup context via raw fetch
-- `host_permissions` in manifest bypass CORS — no proxy/server needed
+- API keys are user-provided, stored in `chrome.storage.sync`
+- Popup is for settings only (API key management)
+- Main UI is a sidebar injected on GitHub PR pages via content script (shadow DOM)
+- API calls (GitHub, Anthropic) go through background service worker (MV3 requirement)
+- Background worker relays results to sidebar via `chrome.runtime.connect` port (streaming)
+- Content script detects PR pages via `turbo:load` + MutationObserver + `popstate`
 - Tab URL auto-detected via `chrome.tabs.query` with `activeTab` permission
 
 ## Rules

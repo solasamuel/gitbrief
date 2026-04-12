@@ -2,152 +2,135 @@
 
 ## System Overview
 
-GitBrief is a Chrome browser extension (Manifest V3). Users provide their own API keys. The extension popup makes direct API calls to GitHub and Anthropic — no backend server required.
+GitBrief is a Chrome browser extension (Manifest V3) that injects a sidebar panel on GitHub PR pages. Users provide their own API keys. All API calls go through the background service worker. No backend server.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Chrome Extension                                   │
-│                                                     │
-│  ┌─────────────┐    ┌───────────────────────────┐   │
-│  │  Options     │    │  Popup (React)            │   │
-│  │  Page        │    │                           │   │
-│  │             ─┼──▶ │  PrUrlForm                │   │
-│  │  API Keys    │    │  AnalysisLoading           │   │
-│  │  (storage)   │    │  AnalysisResults           │   │
-│  └─────────────┘    │  ErrorDisplay              │   │
-│                      └──────────┬────────────────┘   │
-│                                 │                    │
-│                      ┌──────────▼────────────────┐   │
-│                      │  analyzer.ts              │   │
-│                      │  (orchestration)          │   │
-│                      └──────────┬────────────────┘   │
-│                                 │                    │
-│               ┌─────────────────┼─────────────────┐  │
-│               ▼                 ▼                 ▼  │
-│     ┌──────────────┐  ┌──────────────┐  ┌────────┐  │
-│     │ GitHub API   │  │ Claude API   │  │Storage │  │
-│     │ (raw fetch)  │  │ (raw fetch)  │  │(chrome)│  │
-│     └──────┬───────┘  └──────┬───────┘  └────────┘  │
-└────────────┼─────────────────┼──────────────────────┘
-             │                 │
-             ▼                 ▼
-    ┌──────────────┐  ┌──────────────┐
-    │ api.github   │  │api.anthropic │
-    │ .com         │  │.com          │
-    └──────────────┘  └──────────────┘
+GitHub PR Page (github.com/owner/repo/pull/123)
+  ├── Toggle Button (GitHub DOM, uses GitHub's btn classes)
+  └── Sidebar Panel (shadow DOM, React + Tailwind, 350px fixed right)
+        │
+        │  chrome.runtime.connect (port — streaming)
+        ▼
+Background Service Worker
+  ├── Reads keys from chrome.storage.sync
+  ├── Calls GitHub API (raw fetch via host_permissions)
+  ├── Calls Claude API (streaming SSE via host_permissions)
+  └── Relays progress + chunks back to sidebar via port
+
+Popup (extension icon click)
+  └── Settings form only (API key management)
 ```
+
+## Why Background Worker for API Calls
+
+Content scripts in Manifest V3 **cannot** make cross-origin requests. Only the background service worker has access to `host_permissions`. The worker acts as a relay:
+1. Content script opens a port via `chrome.runtime.connect`
+2. Worker receives the PR URL, runs the full pipeline
+3. Worker streams results back via `port.postMessage()`
 
 ## Component Breakdown
 
 ```
 src/
-  lib/                              # Pure business logic (no browser/extension deps)
-    types.ts                        # All shared TypeScript types
+  lib/                              # Pure business logic (no browser deps)
+    types.ts                        # Shared types + message types
     errors.ts                       # Custom error classes
-    parse-pr-url.ts                 # URL -> {owner, repo, pullNumber}
+    parse-pr-url.ts                 # URL → {owner, repo, pullNumber}
     github-client.ts                # GitHub REST API: metadata + diff
     diff-utils.ts                   # truncate, filter, stats
-    prompt-builder.ts               # (metadata, diff) -> Claude messages
-    claude-client.ts                # Raw fetch to Anthropic API
-    storage.ts                      # chrome.storage.local wrapper
-    analyzer.ts                     # Orchestrates full analysis pipeline
+    prompt-builder.ts               # (metadata, diff) → Claude messages
+    claude-client.ts                # Raw fetch to Anthropic API (+ streaming)
+    storage.ts                      # chrome.storage.sync wrapper
 
-  popup/                            # Extension popup UI
-    App.tsx                         # State machine: idle -> loading -> success/error
-    components/
-      PrUrlForm.tsx                 # URL input with tab auto-detect
-      AnalysisLoading.tsx           # Loading spinner
-      AnalysisResults.tsx           # Structured results display
-      ErrorDisplay.tsx              # Error alert + retry + options link
+  content/                          # Sidebar UI (injected on PR pages)
+    content-script.ts               # PR detection, toggle button, sidebar lifecycle
+    sidebar/
+      index.tsx                     # Shadow DOM mount
+      Sidebar.tsx                   # Main component (state machine)
+      sidebar.css                   # Tailwind (imported ?inline for shadow DOM)
+      components/
+        AnalyzeButton.tsx
+        AnalysisResults.tsx
+        LoadingState.tsx
+        ErrorState.tsx
 
-  options/                          # Settings page
-    Options.tsx                     # API key input form
+  popup/                            # Settings only
+    App.tsx                         # API key form
+    popup.css
 
-  background/                       # Service worker
-    service-worker.ts               # Minimal (extension lifecycle)
-
-  content/                          # Optional content script
-    content-script.ts               # Inject button on GitHub PR pages
+  background/                       # API relay
+    service-worker.ts               # onConnect/onMessage handlers
+    message-types.ts                # Typed message definitions
 ```
 
 ## Data Flow
 
 ```
-1. User clicks extension icon (or navigates to a GitHub PR page)
-2. Popup opens, auto-detects PR URL from active tab via chrome.tabs.query
-3. User clicks "Analyze" (or URL is manually entered)
-4. analyzer.ts orchestrates:
-   a. getApiKeys() -> reads keys from chrome.storage.local
-   b. parsePrUrl(url) -> {owner, repo, pullNumber}
-   c. fetchPrMetadata(owner, repo, pullNumber, token) -> PrMetadata
-   d. fetchPrDiff(owner, repo, pullNumber, token) -> rawDiff
-   e. filterDiff(rawDiff) -> filteredDiff
-   f. truncateDiff(filteredDiff) -> processedDiff
-   g. extractDiffStats(filteredDiff) -> DiffStats
-   h. buildAnalysisPrompt(metadata, processedDiff) -> messages
-   i. analyzeWithClaude(messages, apiKey) -> AnalysisResult
-   j. Return { metadata, stats, analysis, meta }
-5. Popup renders AnalysisResults
+1. User navigates to a GitHub PR page
+2. Content script detects PR via turbo:load / MutationObserver / popstate
+3. Toggle button injected into GitHub's .gh-header-actions
+4. User clicks toggle → sidebar opens (shadow DOM)
+5. User clicks "Analyze" → content script opens port:
+   chrome.runtime.connect({ name: 'analyze' })
+6. Background worker receives port, orchestrates:
+   a. getApiKeys() → chrome.storage.sync
+   b. parsePrUrl(url) → {owner, repo, pullNumber}
+   c. fetchPrMetadata() → PrMetadata          [PROGRESS: fetching_metadata]
+   d. fetchPrDiff() → rawDiff                  [PROGRESS: fetching_diff]
+   e. filterDiff() → truncateDiff()            [PROGRESS: processing_diff]
+   f. buildAnalysisPrompt() → messages
+   g. analyzeWithClaudeStream() → SSE chunks   [PROGRESS: analyzing]
+      → relay STREAM_CHUNK for each text delta
+   h. Parse final JSON                         [COMPLETE: AnalysisResponse]
+7. Sidebar renders results progressively
 ```
 
-## API Contracts
-
-### GitHub REST API v3 (called from extension)
-
-**Get PR metadata:** `GET https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}`
-**Get PR diff:** `GET https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}` with `Accept: application/vnd.github.v3.diff`
-
-### Anthropic Messages API (called from extension)
-
-**Analyze diff:** `POST https://api.anthropic.com/v1/messages`
-- Headers: `x-api-key`, `anthropic-version: 2023-06-01`, `content-type: application/json`
-- Body: `{ model, max_tokens: 4096, system, messages: [{role: "user", content}] }`
-- Response: `{ content: [{ type: "text", text: "<JSON>" }] }`
-
-### Analysis Response Shape
+## Message Protocol
 
 ```typescript
-{
-  metadata: { title, author, body, state, baseBranch, headBranch, htmlUrl, createdAt }
-  stats: { filesChanged, insertions, deletions }
-  analysis: {
-    summary: string
-    keyChanges: [{ file, description, impact: "high"|"medium"|"low" }]
-    risks: [{ severity: "high"|"medium"|"low", title, description }]
-    suggestions: [{ category, title, description }]
-  }
-  meta: { diffTruncated, filesAnalyzed, model }
-}
+// Content script → Background (via port)
+{ type: 'START_ANALYSIS', prUrl: string }
+
+// Background → Content script (via port)
+{ type: 'PROGRESS', stage: 'fetching_metadata' | 'fetching_diff' | 'processing_diff' | 'analyzing' }
+{ type: 'STREAM_CHUNK', text: string }
+{ type: 'COMPLETE', data: AnalysisResponse }
+{ type: 'ERROR', error: string, code?: ErrorCode }
+
+// One-shot messages (chrome.runtime.sendMessage)
+{ type: 'CHECK_API_KEYS' } → { hasKeys: boolean }
 ```
+
+## Key Implementation Details
+
+### PR Detection (GitHub SPA)
+Triple-layer: `turbo:load` event (GitHub uses Turbo Drive), `popstate` for back/forward, MutationObserver on `<title>` as fallback.
+
+### Shadow DOM
+Sidebar styles isolated via `attachShadow({mode: 'open'})`. Tailwind CSS imported as inline string (`?inline` Vite suffix) and injected into shadow root `<style>` tag.
+
+### Claude SSE Streaming
+`analyzeWithClaudeStream(prompt, apiKey, onChunk)` sends `stream: true` to Anthropic API. Parses `content_block_delta` SSE events from `ReadableStream`. Accumulates text, calls `onChunk` per delta. Parses final JSON on `message_stop`.
+
+### Storage
+`chrome.storage.sync` (not local) — keys persist across Chrome instances signed into the same Google account.
 
 ## Technology Decisions
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Platform | Chrome Extension (Manifest V3) | Users provide own keys, no server needed |
-| Bundler | Vite + @crxjs/vite-plugin | HMR in dev, automatic manifest handling |
-| UI | React + Tailwind CSS | Fast popup development |
-| Claude API | Raw fetch (no SDK) | SDK uses Node.js APIs; raw fetch works natively in extensions |
-| GitHub API | Raw fetch | Only 2 endpoints needed |
-| API calls | From popup context | Simpler than message passing through background worker |
-| CORS | host_permissions in manifest | Bypasses CORS for declared origins; no proxy needed |
-| Key storage | chrome.storage.local | Encrypted at rest, scoped to extension, persists across sessions |
-| Tab detection | chrome.tabs.query + activeTab | Reads URL on popup open; minimal permission |
-| Testing | Vitest + @testing-library/react | Fast, TS-native, works for extension code |
+| UI location | Sidebar on GitHub PR page | Contextual — user sees review alongside the PR |
+| Style isolation | Shadow DOM | Prevents GitHub CSS from affecting sidebar and vice versa |
+| API relay | Background service worker | MV3 content scripts can't make cross-origin requests |
+| Streaming | chrome.runtime.connect port | Persistent connection for progressive updates |
+| Claude API | Raw fetch with stream:true | No SDK; works natively in service worker |
+| Key storage | chrome.storage.sync | Cross-device persistence |
+| PR detection | turbo:load + MutationObserver | Handles GitHub's SPA navigation |
 
 ## Security Model
 
-1. **No server** — all API calls happen client-side in the extension
-2. **User-provided keys** — stored in `chrome.storage.local`, encrypted at rest by Chrome, scoped to the extension
-3. **host_permissions** — explicitly declares which origins the extension can contact (GitHub, Anthropic)
-4. **No remote code** — all code is bundled; no `eval()`, no CDN scripts
-5. **Content Security Policy** — Manifest V3 default CSP is sufficient (no inline scripts, no remote code)
-6. **activeTab** — only reads the URL of the active tab when the user clicks the extension icon
-
-## Non-Functional Requirements
-
-- **Response time**: Target < 15 seconds (GitHub ~1s + Claude ~5-10s)
-- **Max diff size**: 100,000 characters after filtering
-- **Popup dimensions**: 400px wide, 300-600px tall, scrollable
-- **Accessibility**: Interactive components have ARIA attributes
-- **Distribution**: Chrome Web Store or side-loaded via `chrome://extensions`
+1. **User-provided keys** — stored in `chrome.storage.sync`, encrypted at rest by Chrome
+2. **host_permissions** — explicitly declares api.github.com and api.anthropic.com
+3. **No remote code** — all code bundled; no eval(), no CDN
+4. **Shadow DOM** — sidebar cannot be manipulated by GitHub's JavaScript
+5. **activeTab** — minimal permission for tab URL detection
