@@ -1,11 +1,13 @@
 # GitBrief
 
-AI-powered GitHub PR explainer and review assistant. Paste a pull request URL, get an instant structured code review: plain-English summary, key changes, risks, and actionable suggestions.
+A Chrome browser extension that provides AI-powered GitHub PR reviews. Paste a pull request URL or let it auto-detect from your current tab, and get an instant structured code review: plain-English summary, key changes, risks, and actionable suggestions.
+
+Users provide their own API keys — no server, no account, no data collection.
 
 ## How It Works
 
-1. Paste a GitHub PR URL (e.g. `https://github.com/owner/repo/pull/123`)
-2. GitBrief fetches the diff and metadata via the GitHub REST API
+1. Click the GitBrief extension icon while on a GitHub PR page (or paste a URL manually)
+2. The extension fetches the diff and metadata via the GitHub REST API
 3. The diff is processed (filtered, truncated if needed) and sent to Claude for analysis
 4. You get back a structured review with:
    - A plain-English summary of what the PR does
@@ -15,54 +17,58 @@ AI-powered GitHub PR explainer and review assistant. Paste a pull request URL, g
 
 Works with **public and private repos** (private repos require a GitHub token with `repo` scope).
 
+## Setup
+
+### Prerequisites
+
+- Chrome (or Chromium-based browser)
+- An [Anthropic API key](https://console.anthropic.com/)
+- (Optional) A [GitHub personal access token](https://github.com/settings/tokens) for private repos and higher rate limits
+
+### Install from Source
+
+```bash
+git clone https://github.com/solasamuel/gitbrief.git
+cd gitbrief
+npm install
+npm run build
+```
+
+Then load the extension:
+1. Open `chrome://extensions`
+2. Enable "Developer mode" (top right)
+3. Click "Load unpacked"
+4. Select the `dist/` directory
+
+### Configure API Keys
+
+1. Click the GitBrief extension icon
+2. Go to **Settings** (or right-click the icon > Options)
+3. Enter your Anthropic API key (required)
+4. Enter your GitHub token (optional, for private repos)
+5. Click Save
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 15 (App Router) |
+| Platform | Chrome Extension (Manifest V3) |
 | Language | TypeScript |
-| Styling | Tailwind CSS v4, shadcn/ui |
-| AI | Claude Sonnet via `@anthropic-ai/sdk` |
+| UI | React, Tailwind CSS v4 |
+| AI | Claude Sonnet via raw fetch to Anthropic API |
 | GitHub | REST API v3 (raw fetch) |
+| Bundler | Vite + @crxjs/vite-plugin |
 | Testing | Vitest, @testing-library/react |
-| Deployment | Vercel |
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- An [Anthropic API key](https://console.anthropic.com/)
-- (Optional) A [GitHub personal access token](https://github.com/settings/tokens) for private repos and higher rate limits
-
-### Setup
+## Development
 
 ```bash
-# Clone the repo
-git clone https://github.com/solasamuel/gitbrief.git
-cd gitbrief
-
-# Install dependencies
-npm install
-
-# Create your environment file
-cp .env.example .env.local
+npm run dev          # Start Vite dev server (HMR for extension)
+npm run build        # Production build to dist/
+npm run package      # Build + create gitbrief-extension.zip
 ```
 
-Edit `.env.local` with your keys:
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-GITHUB_TOKEN=ghp_...          # optional, needed for private repos
-```
-
-### Development
-
-```bash
-npm run dev        # Start dev server at http://localhost:3000
-npm run build      # Production build
-npm run start      # Start production server
-```
+Load the `dist/` directory as an unpacked extension in Chrome for development.
 
 ### Testing
 
@@ -71,7 +77,7 @@ npm run test          # Run all tests once
 npm run test:watch    # Run tests in watch mode
 ```
 
-Tests are written with Vitest and organized alongside the code they test in `__tests__/` directories. The [Vitest VS Code extension](https://marketplace.visualstudio.com/items?itemName=vitest.explorer) provides integrated test discovery and debugging.
+Tests use Vitest and are organized in `__tests__/` directories alongside the code they test. The [Vitest VS Code extension](https://marketplace.visualstudio.com/items?itemName=vitest.explorer) provides integrated test discovery.
 
 ### Code Quality
 
@@ -84,73 +90,32 @@ npm run typecheck  # TypeScript type checking (tsc --noEmit)
 
 ```
 src/
-  app/
-    page.tsx                    # Home page (PR input + results)
-    layout.tsx                  # Root layout, metadata
-    api/analyze/
-      route.ts                  # POST /api/analyze endpoint
-  components/
-    pr-url-form.tsx             # URL input form
-    analysis-loading.tsx        # Loading skeleton
-    analysis-results.tsx        # Structured results display
-    error-display.tsx           # Error states with retry
-  lib/
-    parse-pr-url.ts             # GitHub PR URL parser
-    github-client.ts            # GitHub REST API client
-    diff-utils.ts               # Diff truncation and filtering
-    prompt-builder.ts           # Claude prompt construction
-    claude-client.ts            # Claude API client
-    rate-limiter.ts             # In-memory rate limiting
-    types.ts                    # Shared TypeScript types
-    errors.ts                   # Custom error classes
+  lib/                              # Pure business logic
+    parse-pr-url.ts                 # GitHub PR URL parser
+    github-client.ts                # GitHub REST API client
+    diff-utils.ts                   # Diff truncation and filtering
+    prompt-builder.ts               # Claude prompt construction
+    claude-client.ts                # Claude API client (raw fetch)
+    storage.ts                      # chrome.storage.local wrapper
+    analyzer.ts                     # Orchestration layer
+    types.ts                        # Shared TypeScript types
+    errors.ts                       # Custom error classes
+  popup/                            # Extension popup UI
+    App.tsx                         # Main popup component
+    components/                     # UI components
+  options/                          # Settings page (API keys)
+  background/                       # Service worker
+  content/                          # Content script (optional)
 docs/
-  solution-architecture.md      # System design and API contracts
-  product-backlog.json          # Ordered backlog for TDD implementation
-  testing-plan.json             # Test plan mapped to backlog items
+  solution-architecture.md          # System design
+  product-backlog.json              # Ordered backlog
+  testing-plan.json                 # Test plan
 ```
-
-## API
-
-### POST /api/analyze
-
-Analyzes a GitHub pull request and returns a structured review.
-
-**Request:**
-
-```json
-{ "url": "https://github.com/owner/repo/pull/123" }
-```
-
-**Response:**
-
-```json
-{
-  "metadata": {
-    "title": "Add user authentication",
-    "author": "developer",
-    "baseBranch": "main",
-    "headBranch": "feature/auth"
-  },
-  "stats": {
-    "filesChanged": 12,
-    "insertions": 340,
-    "deletions": 28
-  },
-  "analysis": {
-    "summary": "This PR adds JWT-based authentication...",
-    "keyChanges": [{ "file": "src/auth.ts", "description": "...", "impact": "high" }],
-    "risks": [{ "severity": "medium", "title": "...", "description": "..." }],
-    "suggestions": [{ "category": "security", "title": "...", "description": "..." }]
-  }
-}
-```
-
-See [docs/solution-architecture.md](docs/solution-architecture.md) for full API contract and error codes.
 
 ## Branching Strategy
 
 ```
-main            <- production (deployed to Vercel)
+main            <- production
   └── develop   <- integration branch
         └── feature/BL-{id}-{description}
 ```
@@ -159,20 +124,12 @@ main            <- production (deployed to Vercel)
 - Commit messages: `feat(BL-002): add PR URL parser with validation`
 - Each backlog item = one feature branch, TDD (red-green-refactor), merge to develop
 
-## Environment Variables
+## Privacy & Security
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude access |
-| `GITHUB_TOKEN` | No | GitHub PAT for private repos and higher rate limits (5000/hr vs 60/hr) |
-
-## Deployment
-
-The app is designed for [Vercel](https://vercel.com):
-
-1. Connect the repo to Vercel
-2. Set `ANTHROPIC_API_KEY` and `GITHUB_TOKEN` in Vercel environment variables
-3. Deploy -- every push to `main` triggers a production deploy
+- **No server** — all API calls happen directly from the extension to GitHub and Anthropic
+- **Your keys stay local** — stored in Chrome's encrypted extension storage, never transmitted anywhere else
+- **No analytics, no tracking, no data collection**
+- **Open source** — inspect the code yourself
 
 ## License
 

@@ -1,272 +1,174 @@
 {
   "project": "GitBrief",
+  "version": "2.0.0",
   "test_framework": "vitest",
   "component_testing": "@testing-library/react",
   "total_tests": 33,
   "tests": [
     {
-      "id": "T-001",
-      "description": "Vitest config loads and executes",
-      "type": "unit",
-      "related_backlog_item": "BL-001",
-      "test_file": "src/__tests__/setup.test.ts",
-      "validates": "Project scaffolding and Vitest configuration"
+      "id": "T-001", "description": "Vitest config loads and executes", "type": "unit",
+      "related_backlog_item": "BL-001", "test_file": "src/__tests__/setup.test.ts",
+      "validates": "Project scaffolding and Vitest configuration", "status": "passing"
     },
     {
-      "id": "T-002",
-      "description": "parsePrUrl extracts owner/repo/pullNumber from valid URLs",
-      "type": "unit",
-      "related_backlog_item": "BL-002",
-      "test_file": "src/lib/__tests__/parse-pr-url.test.ts",
-      "validates": "Correct parsing of standard and variant PR URLs"
+      "id": "T-002", "description": "parsePrUrl extracts owner/repo/pullNumber from valid URLs", "type": "unit",
+      "related_backlog_item": "BL-002", "test_file": "src/lib/__tests__/parse-pr-url.test.ts",
+      "validates": "Correct parsing of standard and variant PR URLs", "status": "passing"
     },
     {
-      "id": "T-003",
-      "description": "parsePrUrl rejects non-GitHub and non-PR URLs",
-      "type": "unit",
-      "related_backlog_item": "BL-002",
-      "test_file": "src/lib/__tests__/parse-pr-url.test.ts",
-      "validates": "Throws descriptive errors for invalid inputs"
+      "id": "T-003", "description": "parsePrUrl rejects non-GitHub and non-PR URLs", "type": "unit",
+      "related_backlog_item": "BL-002", "test_file": "src/lib/__tests__/parse-pr-url.test.ts",
+      "validates": "Throws descriptive errors for invalid inputs", "status": "passing"
     },
     {
-      "id": "T-004",
-      "description": "parsePrUrl edge cases (zero, negative, non-numeric)",
-      "type": "unit",
-      "related_backlog_item": "BL-002",
-      "test_file": "src/lib/__tests__/parse-pr-url.test.ts",
-      "validates": "Rejects pull/0, pull/-1, pull/abc"
+      "id": "T-004", "description": "parsePrUrl edge cases (zero, negative, non-numeric)", "type": "unit",
+      "related_backlog_item": "BL-002", "test_file": "src/lib/__tests__/parse-pr-url.test.ts",
+      "validates": "Rejects pull/0, pull/-1, pull/abc", "status": "passing"
     },
     {
-      "id": "T-005",
-      "description": "fetchPrMetadata returns typed metadata on success",
-      "type": "integration",
-      "related_backlog_item": "BL-003",
-      "test_file": "src/lib/__tests__/github-client.test.ts",
-      "validates": "Maps GitHub API response to PrMetadata (mocked fetch)"
+      "id": "T-005", "description": "fetchPrMetadata returns typed metadata on success", "type": "integration",
+      "related_backlog_item": "BL-003", "test_file": "src/lib/__tests__/github-client.test.ts",
+      "validates": "Maps GitHub API response to PrMetadata (mocked fetch)", "status": "passing"
     },
     {
-      "id": "T-006",
-      "description": "fetchPrMetadata sends auth header when token provided",
-      "type": "integration",
-      "related_backlog_item": "BL-003",
-      "test_file": "src/lib/__tests__/github-client.test.ts",
-      "validates": "Authorization header present/absent based on token"
+      "id": "T-006", "description": "fetchPrMetadata sends auth header when token provided", "type": "integration",
+      "related_backlog_item": "BL-003", "test_file": "src/lib/__tests__/github-client.test.ts",
+      "validates": "Authorization header present/absent based on token", "status": "passing"
     },
     {
-      "id": "T-007",
-      "description": "fetchPrMetadata handles 404 and 403 errors",
-      "type": "integration",
-      "related_backlog_item": "BL-003",
-      "test_file": "src/lib/__tests__/github-client.test.ts",
-      "validates": "Throws GitHubApiError with correct status and message"
+      "id": "T-007", "description": "fetchPrMetadata handles 404 and 403 errors", "type": "integration",
+      "related_backlog_item": "BL-003", "test_file": "src/lib/__tests__/github-client.test.ts",
+      "validates": "Throws GitHubApiError with correct status and message", "status": "passing"
     },
     {
-      "id": "T-008",
-      "description": "fetchPrDiff returns raw diff string",
-      "type": "integration",
-      "related_backlog_item": "BL-004",
-      "test_file": "src/lib/__tests__/github-client.test.ts",
-      "validates": "Sends diff Accept header, returns text (mocked fetch)"
+      "id": "T-008", "description": "fetchPrDiff returns raw diff string", "type": "integration",
+      "related_backlog_item": "BL-004", "test_file": "src/lib/__tests__/github-client.test.ts",
+      "validates": "Sends diff Accept header, returns text (mocked fetch)", "status": "passing"
     },
     {
-      "id": "T-009",
-      "description": "fetchPrDiff handles empty diff",
-      "type": "integration",
-      "related_backlog_item": "BL-004",
-      "test_file": "src/lib/__tests__/github-client.test.ts",
-      "validates": "Returns empty string for no-change PRs"
+      "id": "T-009", "description": "fetchPrDiff handles empty diff", "type": "integration",
+      "related_backlog_item": "BL-004", "test_file": "src/lib/__tests__/github-client.test.ts",
+      "validates": "Returns empty string for no-change PRs", "status": "passing"
     },
     {
-      "id": "T-010",
-      "description": "truncateDiff cuts at hunk boundaries with marker",
-      "type": "unit",
-      "related_backlog_item": "BL-005",
-      "test_file": "src/lib/__tests__/diff-utils.test.ts",
-      "validates": "Truncation at last complete hunk, [truncated] appended"
+      "id": "T-010", "description": "truncateDiff cuts at hunk boundaries with marker", "type": "unit",
+      "related_backlog_item": "BL-005", "test_file": "src/lib/__tests__/diff-utils.test.ts",
+      "validates": "Truncation at last complete file section, [truncated] appended", "status": "passing"
     },
     {
-      "id": "T-011",
-      "description": "truncateDiff passes through small diffs unchanged",
-      "type": "unit",
-      "related_backlog_item": "BL-005",
-      "test_file": "src/lib/__tests__/diff-utils.test.ts",
-      "validates": "Diffs under limit are returned as-is"
+      "id": "T-011", "description": "truncateDiff passes through small diffs unchanged", "type": "unit",
+      "related_backlog_item": "BL-005", "test_file": "src/lib/__tests__/diff-utils.test.ts",
+      "validates": "Diffs under limit are returned as-is", "status": "passing"
     },
     {
-      "id": "T-012",
-      "description": "filterDiff removes lock files and binary markers",
-      "type": "unit",
-      "related_backlog_item": "BL-005",
-      "test_file": "src/lib/__tests__/diff-utils.test.ts",
-      "validates": "package-lock.json, yarn.lock, binary files removed"
+      "id": "T-012", "description": "filterDiff removes lock files and binary markers", "type": "unit",
+      "related_backlog_item": "BL-005", "test_file": "src/lib/__tests__/diff-utils.test.ts",
+      "validates": "package-lock.json, yarn.lock, binary files removed", "status": "passing"
     },
     {
-      "id": "T-013",
-      "description": "extractDiffStats counts files/insertions/deletions",
-      "type": "unit",
-      "related_backlog_item": "BL-005",
-      "test_file": "src/lib/__tests__/diff-utils.test.ts",
-      "validates": "Accurate parsing of unified diff format"
+      "id": "T-013", "description": "extractDiffStats counts files/insertions/deletions", "type": "unit",
+      "related_backlog_item": "BL-005", "test_file": "src/lib/__tests__/diff-utils.test.ts",
+      "validates": "Accurate parsing of unified diff format", "status": "passing"
     },
     {
-      "id": "T-014",
-      "description": "buildAnalysisPrompt returns system+user messages",
-      "type": "unit",
-      "related_backlog_item": "BL-006",
-      "test_file": "src/lib/__tests__/prompt-builder.test.ts",
-      "validates": "System has JSON schema, user has PR metadata and diff"
+      "id": "T-014", "description": "buildAnalysisPrompt returns system+user messages", "type": "unit",
+      "related_backlog_item": "BL-006", "test_file": "src/lib/__tests__/prompt-builder.test.ts",
+      "validates": "System has JSON schema, user has PR metadata and diff", "status": "passing"
     },
     {
-      "id": "T-015",
-      "description": "buildAnalysisPrompt handles empty description",
-      "type": "unit",
-      "related_backlog_item": "BL-006",
-      "test_file": "src/lib/__tests__/prompt-builder.test.ts",
-      "validates": "No crash or 'undefined' when description is null/empty"
+      "id": "T-015", "description": "buildAnalysisPrompt handles empty description", "type": "unit",
+      "related_backlog_item": "BL-006", "test_file": "src/lib/__tests__/prompt-builder.test.ts",
+      "validates": "No crash or 'undefined' when description is null/empty", "status": "passing"
     },
     {
-      "id": "T-016",
-      "description": "Claude client sends messages and parses JSON response",
-      "type": "integration",
-      "related_backlog_item": "BL-007",
-      "test_file": "src/lib/__tests__/claude-client.test.ts",
-      "validates": "Mocked SDK call, JSON parsing into AnalysisResult"
+      "id": "T-016", "description": "Claude client sends request with correct headers and parses JSON response", "type": "integration",
+      "related_backlog_item": "BL-007", "test_file": "src/lib/__tests__/claude-client.test.ts",
+      "validates": "Mocked fetch to api.anthropic.com, correct headers, JSON parsing into AnalysisResult", "status": "passing"
     },
     {
-      "id": "T-017",
-      "description": "Claude client throws on invalid JSON response",
-      "type": "integration",
-      "related_backlog_item": "BL-007",
-      "test_file": "src/lib/__tests__/claude-client.test.ts",
-      "validates": "ClaudeParseError thrown with raw response attached"
+      "id": "T-017", "description": "Claude client throws ClaudeParseError on invalid JSON response", "type": "integration",
+      "related_backlog_item": "BL-007", "test_file": "src/lib/__tests__/claude-client.test.ts",
+      "validates": "ClaudeParseError thrown with raw response attached", "status": "passing"
     },
     {
-      "id": "T-018",
-      "description": "Claude client throws on SDK failure",
-      "type": "integration",
-      "related_backlog_item": "BL-007",
-      "test_file": "src/lib/__tests__/claude-client.test.ts",
-      "validates": "ClaudeApiError wraps SDK error"
+      "id": "T-018", "description": "Claude client throws ClaudeApiError on HTTP errors", "type": "integration",
+      "related_backlog_item": "BL-007", "test_file": "src/lib/__tests__/claude-client.test.ts",
+      "validates": "ClaudeApiError for 401, 429, 500 status codes", "status": "passing"
     },
     {
-      "id": "T-019",
-      "description": "POST /api/analyze returns 200 for valid PR URL",
-      "type": "integration",
-      "related_backlog_item": "BL-008",
-      "test_file": "src/app/api/analyze/__tests__/route.test.ts",
-      "validates": "Full happy path with mocked clients"
+      "id": "T-019", "description": "Manifest V3 is valid and Vite build produces extension structure", "type": "unit",
+      "related_backlog_item": "BL-008", "test_file": "src/__tests__/manifest.test.ts",
+      "validates": "manifest.json has required fields, permissions, host_permissions"
     },
     {
-      "id": "T-020",
-      "description": "POST /api/analyze returns 400 for invalid input",
-      "type": "integration",
-      "related_backlog_item": "BL-008",
-      "test_file": "src/app/api/analyze/__tests__/route.test.ts",
-      "validates": "Missing/invalid URL returns 400 with error code"
+      "id": "T-020", "description": "storage.ts getApiKeys/setApiKeys read and write chrome.storage.local", "type": "unit",
+      "related_backlog_item": "BL-009", "test_file": "src/lib/__tests__/storage.test.ts",
+      "validates": "Mocked chrome.storage.local; getApiKeys returns typed keys; setApiKeys persists"
     },
     {
-      "id": "T-021",
-      "description": "POST /api/analyze returns 502 on GitHub failure",
-      "type": "integration",
-      "related_backlog_item": "BL-008",
-      "test_file": "src/app/api/analyze/__tests__/route.test.ts",
-      "validates": "GitHubApiError mapped to 502 GITHUB_ERROR"
+      "id": "T-021", "description": "Options page renders fields, saves keys, shows feedback", "type": "unit",
+      "related_backlog_item": "BL-009", "test_file": "src/options/__tests__/Options.test.tsx",
+      "validates": "Two inputs render, save triggers chrome.storage.local.set, success feedback shown"
     },
     {
-      "id": "T-022",
-      "description": "POST /api/analyze returns 502 on Claude failure",
-      "type": "integration",
-      "related_backlog_item": "BL-008",
-      "test_file": "src/app/api/analyze/__tests__/route.test.ts",
-      "validates": "ClaudeApiError mapped to 502 CLAUDE_ERROR"
+      "id": "T-022", "description": "PrUrlForm auto-detects PR URL from active tab", "type": "unit",
+      "related_backlog_item": "BL-010", "test_file": "src/popup/__tests__/PrUrlForm.test.tsx",
+      "validates": "Mocked chrome.tabs.query returns PR URL, input pre-filled"
     },
     {
-      "id": "T-023",
-      "description": "PrUrlForm renders and calls onSubmit with URL",
-      "type": "unit",
-      "related_backlog_item": "BL-009",
-      "test_file": "src/components/__tests__/pr-url-form.test.tsx",
+      "id": "T-023", "description": "PrUrlForm renders and calls onSubmit with URL", "type": "unit",
+      "related_backlog_item": "BL-010", "test_file": "src/popup/__tests__/PrUrlForm.test.tsx",
       "validates": "Input renders, submit calls handler, disabled when empty"
     },
     {
-      "id": "T-024",
-      "description": "PrUrlForm shows validation error on blur",
-      "type": "unit",
-      "related_backlog_item": "BL-009",
-      "test_file": "src/components/__tests__/pr-url-form.test.tsx",
+      "id": "T-024", "description": "PrUrlForm shows validation error on blur for invalid URLs", "type": "unit",
+      "related_backlog_item": "BL-010", "test_file": "src/popup/__tests__/PrUrlForm.test.tsx",
       "validates": "Invalid URL shows error, clears on valid input"
     },
     {
-      "id": "T-025",
-      "description": "AnalysisLoading renders spinner and status",
-      "type": "unit",
-      "related_backlog_item": "BL-010",
-      "test_file": "src/components/__tests__/analysis-loading.test.tsx",
+      "id": "T-025", "description": "AnalysisLoading renders spinner and status text", "type": "unit",
+      "related_backlog_item": "BL-011", "test_file": "src/popup/__tests__/AnalysisLoading.test.tsx",
       "validates": "aria-busy=true, status text visible"
     },
     {
-      "id": "T-026",
-      "description": "AnalysisResults renders all sections",
-      "type": "unit",
-      "related_backlog_item": "BL-011",
-      "test_file": "src/components/__tests__/analysis-results.test.tsx",
-      "validates": "Summary, changes, risks with badges, suggestions all render"
+      "id": "T-026", "description": "AnalysisResults renders all sections", "type": "unit",
+      "related_backlog_item": "BL-011", "test_file": "src/popup/__tests__/AnalysisResults.test.tsx",
+      "validates": "Summary, changes with impact, risks with severity badges, suggestions all render"
     },
     {
-      "id": "T-027",
-      "description": "AnalysisResults handles empty arrays",
-      "type": "unit",
-      "related_backlog_item": "BL-011",
-      "test_file": "src/components/__tests__/analysis-results.test.tsx",
+      "id": "T-027", "description": "AnalysisResults handles empty arrays", "type": "unit",
+      "related_backlog_item": "BL-011", "test_file": "src/popup/__tests__/AnalysisResults.test.tsx",
       "validates": "Shows 'None identified' for empty risks/suggestions"
     },
     {
-      "id": "T-028",
-      "description": "ErrorDisplay shows message and retry button",
-      "type": "unit",
-      "related_backlog_item": "BL-012",
-      "test_file": "src/components/__tests__/error-display.test.tsx",
-      "validates": "Error message visible, role=alert, retry calls handler"
+      "id": "T-028", "description": "ErrorDisplay shows message, retry button, and options link for key errors", "type": "unit",
+      "related_backlog_item": "BL-012", "test_file": "src/popup/__tests__/ErrorDisplay.test.tsx",
+      "validates": "Error message visible, role=alert, retry calls handler, 401 shows configure keys link"
     },
     {
-      "id": "T-029",
-      "description": "Home page: idle -> loading -> success",
-      "type": "integration",
-      "related_backlog_item": "BL-013",
-      "test_file": "src/app/__tests__/page.test.tsx",
-      "validates": "Form -> loading -> results state transitions"
+      "id": "T-029", "description": "analyzePr orchestrates full pipeline and returns AnalysisResponse", "type": "integration",
+      "related_backlog_item": "BL-013", "test_file": "src/lib/__tests__/analyzer.test.ts",
+      "validates": "Mocked storage + fetch; full flow from URL to AnalysisResponse"
     },
     {
-      "id": "T-030",
-      "description": "Home page: idle -> loading -> error -> retry",
-      "type": "integration",
-      "related_backlog_item": "BL-013",
-      "test_file": "src/app/__tests__/page.test.tsx",
-      "validates": "Error display, retry resets with URL pre-filled"
+      "id": "T-030", "description": "analyzePr throws appropriate errors for each failure mode", "type": "integration",
+      "related_backlog_item": "BL-013", "test_file": "src/lib/__tests__/analyzer.test.ts",
+      "validates": "Missing API key, GitHub 404, Claude parse error all produce correct typed errors"
     },
     {
-      "id": "T-031",
-      "description": "GitHub Actions workflow files are valid YAML",
-      "type": "unit",
-      "related_backlog_item": "BL-014",
-      "test_file": "src/__tests__/ci-config.test.ts",
-      "validates": "CI/CD files parse correctly and contain required jobs"
+      "id": "T-031", "description": "Popup App: idle -> loading -> success and idle -> loading -> error -> retry", "type": "integration",
+      "related_backlog_item": "BL-013", "test_file": "src/popup/__tests__/App.test.tsx",
+      "validates": "State machine transitions, results display, error display with retry"
     },
     {
-      "id": "T-032",
-      "description": "Rate limiter allows/blocks at threshold",
-      "type": "unit",
-      "related_backlog_item": "BL-015",
-      "test_file": "src/lib/__tests__/rate-limiter.test.ts",
-      "validates": "First N pass, N+1 blocked, resets after window"
+      "id": "T-032", "description": "Content script injects button on GitHub PR pages", "type": "unit",
+      "related_backlog_item": "BL-014", "test_file": "src/content/__tests__/content-script.test.ts",
+      "validates": "Button appears in DOM on PR page URL, not on other GitHub pages"
     },
     {
-      "id": "T-033",
-      "description": "E2E — full flow from URL input to results",
-      "type": "e2e",
-      "related_backlog_item": "BL-015",
-      "test_file": "e2e/full-flow.test.ts",
-      "validates": "Paste URL -> loading -> analysis displayed (mocked at network level)"
+      "id": "T-033", "description": "GitHub Actions workflow files are valid YAML with correct jobs", "type": "unit",
+      "related_backlog_item": "BL-015", "test_file": "src/__tests__/ci-config.test.ts",
+      "validates": "CI files parse correctly, contain lint/typecheck/test/build jobs"
     }
   ]
 }
