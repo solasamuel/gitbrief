@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchPrMetadata } from "@/lib/github-client";
+import { fetchPrMetadata, fetchPrDiff } from "@/lib/github-client";
 import { GitHubApiError } from "@/lib/errors";
 
 const MOCK_GITHUB_RESPONSE = {
@@ -167,6 +167,103 @@ describe("T-007: fetchPrMetadata handles 404 and 403 errors", () => {
 
     await expect(fetchPrMetadata("owner", "repo", 999)).rejects.toThrow(
       /Not Found/
+    );
+  });
+});
+
+const MOCK_DIFF = `diff --git a/src/auth.ts b/src/auth.ts
+new file mode 100644
+--- /dev/null
++++ b/src/auth.ts
+@@ -0,0 +1,5 @@
++export function authenticate() {
++  return true;
++}
+`;
+
+describe("T-008: fetchPrDiff returns raw diff string", () => {
+  it("returns the raw unified diff text", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(MOCK_DIFF),
+      })
+    );
+
+    const result = await fetchPrDiff("owner", "repo", 1);
+    expect(result).toBe(MOCK_DIFF);
+  });
+
+  it("calls GitHub API with the diff Accept header", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(MOCK_DIFF),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await fetchPrDiff("owner", "repo", 1);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.github.com/repos/owner/repo/pulls/1",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Accept: "application/vnd.github.v3.diff",
+        }),
+      })
+    );
+  });
+
+  it("passes auth token when provided", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(MOCK_DIFF),
+    });
+    vi.stubGlobal("fetch", mockFetch);
+
+    await fetchPrDiff("owner", "repo", 1, "ghp_token");
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer ghp_token",
+        }),
+      })
+    );
+  });
+});
+
+describe("T-009: fetchPrDiff handles empty diff", () => {
+  it("returns empty string for a PR with no changes", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(""),
+      })
+    );
+
+    const result = await fetchPrDiff("owner", "repo", 1);
+    expect(result).toBe("");
+  });
+
+  it("throws GitHubApiError on non-2xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: () => Promise.resolve("Not Found"),
+      })
+    );
+
+    await expect(fetchPrDiff("owner", "repo", 999)).rejects.toThrow(
+      GitHubApiError
     );
   });
 });

@@ -43,3 +43,30 @@ export async function fetchPrMetadata(
     createdAt: data.created_at,
   };
 }
+
+export async function fetchPrDiff(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  token?: string,
+): Promise<string> {
+  const url = `${GITHUB_API_BASE}/repos/${owner}/${repo}/pulls/${pullNumber}`;
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github.v3.diff",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new GitHubApiError(
+      text || `GitHub API error: ${response.status}`,
+      response.status,
+    );
+  }
+
+  return response.text();
+}
