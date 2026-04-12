@@ -1,178 +1,203 @@
 {
   "project": "GitBrief",
-  "version": "2.0.0",
-  "description": "Chrome Extension (Manifest V3) — AI-powered GitHub PR explainer & review assistant",
+  "version": "2.1.0",
+  "description": "Chrome Extension (Manifest V3) — sidebar-first AI-powered GitHub PR explainer. Users provide their own API keys.",
   "backlog": [
     {
       "id": "BL-001",
       "title": "Project scaffolding and tooling",
       "status": "done",
-      "description": "Initialize project with TypeScript, Tailwind CSS v4, Vitest, ESLint.",
       "test_cases": ["T-001"]
     },
     {
       "id": "BL-002",
       "title": "PR URL parser",
       "status": "done",
-      "description": "Pure function parsePrUrl(input) that extracts {owner, repo, pullNumber} from a GitHub PR URL.",
       "test_cases": ["T-002", "T-003", "T-004"]
     },
     {
       "id": "BL-003",
       "title": "GitHub API client — PR metadata",
       "status": "done",
-      "description": "Fetch PR metadata from GitHub REST API v3.",
       "test_cases": ["T-005", "T-006", "T-007"]
     },
     {
       "id": "BL-004",
       "title": "GitHub API client — PR diff",
       "status": "done",
-      "description": "Fetch raw unified diff for a PR.",
       "test_cases": ["T-008", "T-009"]
     },
     {
       "id": "BL-005",
       "title": "Diff processing utilities",
       "status": "done",
-      "description": "truncateDiff, filterDiff, extractDiffStats.",
       "test_cases": ["T-010", "T-011", "T-012", "T-013"]
     },
     {
       "id": "BL-006",
       "title": "Claude prompt builder",
       "status": "done",
-      "description": "buildAnalysisPrompt returns system+user message pair.",
       "test_cases": ["T-014", "T-015"]
     },
     {
       "id": "BL-007",
       "title": "Claude API client (raw fetch)",
       "status": "done",
-      "description": "Client using raw fetch to POST api.anthropic.com/v1/messages. API key passed as parameter (user-provided). No SDK dependency.",
       "test_cases": ["T-016", "T-017", "T-018"]
     },
     {
       "id": "BL-008",
-      "title": "Extension scaffold (Manifest V3 + Vite)",
+      "title": "Extension scaffold (Manifest V3 + Vite + CRXJS)",
       "status": "done",
-      "description": "Manifest V3, Vite + CRXJS, popup/options/background entry points. Removed all Next.js files.",
       "test_cases": ["T-019"]
     },
     {
       "id": "BL-009",
-      "title": "Options page (API key management)",
+      "title": "Storage module (chrome.storage.sync)",
       "status": "todo",
-      "description": "React options page where users enter ANTHROPIC_API_KEY (required) and GITHUB_TOKEN (optional). Keys stored in chrome.storage.local. Includes storage.ts wrapper module.",
+      "description": "Typed wrapper around chrome.storage.sync. Functions: getApiKeys(), setApiKeys(), clearApiKeys(). Uses sync so keys persist across devices.",
       "acceptance_criteria": [
-        "Options page renders with two input fields (Anthropic key, GitHub token)",
-        "Save button persists keys to chrome.storage.local",
-        "On load, existing keys are populated (masked display)",
-        "Success/error feedback on save",
-        "Clear button removes stored keys",
-        "storage.ts provides getApiKeys() and setApiKeys() typed wrappers"
+        "getApiKeys() returns typed {anthropicKey?, githubToken?}",
+        "setApiKeys() persists to chrome.storage.sync",
+        "clearApiKeys() removes stored keys"
+      ],
+      "priority": "critical",
+      "estimated_effort": "30m",
+      "dependencies": ["BL-008"],
+      "test_cases": ["T-020"]
+    },
+    {
+      "id": "BL-010",
+      "title": "Popup as settings-only page",
+      "status": "todo",
+      "description": "Rewrite popup to be settings-only. Two input fields (Anthropic API key required, GitHub token optional). Save/clear buttons. Masked display. Remove options page.",
+      "acceptance_criteria": [
+        "Two password inputs (Anthropic key, GitHub token)",
+        "Save persists to chrome.storage.sync",
+        "Existing keys pre-populated (masked)",
+        "Clear button removes keys",
+        "Success/error feedback"
+      ],
+      "priority": "critical",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-009"],
+      "test_cases": ["T-021"]
+    },
+    {
+      "id": "BL-011",
+      "title": "Content script — PR detection + toggle button",
+      "status": "todo",
+      "description": "Content script runs on github.com/*/pull/*. Detects PR pages via turbo:load + MutationObserver + popstate. Injects GitBrief toggle button into PR header using GitHub's own btn classes.",
+      "acceptance_criteria": [
+        "Detects PR pages on initial load and SPA navigation",
+        "Injects toggle button into .gh-header-actions",
+        "Removes button when navigating away from PR pages",
+        "Handles GitHub's Turbo Drive SPA navigation"
       ],
       "priority": "critical",
       "estimated_effort": "1h",
       "dependencies": ["BL-008"],
-      "test_cases": ["T-020", "T-021"]
-    },
-    {
-      "id": "BL-010",
-      "title": "Popup UI — input form with auto-detect",
-      "status": "todo",
-      "description": "PrUrlForm component in popup. Auto-detects PR URL from current tab using chrome.tabs.query. Also supports manual URL paste.",
-      "acceptance_criteria": [
-        "On popup open, queries active tab URL",
-        "If active tab is a GitHub PR page, pre-fills the URL input",
-        "Manual URL input with validation on blur",
-        "Submit button disabled when empty or loading",
-        "Shows 'No API key configured' with link to options if key missing"
-      ],
-      "priority": "high",
-      "estimated_effort": "45m",
-      "dependencies": ["BL-008", "BL-009"],
-      "test_cases": ["T-022", "T-023", "T-024"]
-    },
-    {
-      "id": "BL-011",
-      "title": "Popup UI — loading + results display",
-      "status": "todo",
-      "description": "AnalysisLoading and AnalysisResults components for the popup.",
-      "acceptance_criteria": [
-        "Loading shows spinner with status text and aria-busy",
-        "Results render summary, key changes with impact, risks with severity badges, suggestions",
-        "Empty arrays show 'None identified'",
-        "Content scrollable within popup height constraint (600px max)"
-      ],
-      "priority": "high",
-      "estimated_effort": "1h",
-      "dependencies": ["BL-008"],
-      "test_cases": ["T-025", "T-026", "T-027"]
+      "test_cases": ["T-022"]
     },
     {
       "id": "BL-012",
-      "title": "Popup UI — error display",
+      "title": "Sidebar shell — shadow DOM + React mount",
       "status": "todo",
-      "description": "ErrorDisplay component with user-friendly error messages, retry button, and link to options for key errors.",
+      "description": "Shadow DOM container for sidebar. React app mounted inside shadow root. Tailwind CSS injected via ?inline import. 350px wide fixed panel on right side. State machine: idle/no-keys/loading/streaming/success/error.",
       "acceptance_criteria": [
-        "Displays error in styled alert with role=alert",
-        "Maps error codes to friendly messages",
-        "401 errors show 'Invalid API key' with link to options",
-        "404 errors suggest adding GitHub token for private repos",
-        "Retry button calls onRetry"
+        "Shadow DOM isolates sidebar styles from GitHub",
+        "React renders inside shadow root",
+        "Tailwind utilities work inside shadow DOM",
+        "Sidebar toggles open/closed via button click",
+        "350px wide, full viewport height, fixed position"
       ],
-      "priority": "high",
-      "estimated_effort": "30m",
-      "dependencies": ["BL-008"],
-      "test_cases": ["T-028"]
+      "priority": "critical",
+      "estimated_effort": "1.5h",
+      "dependencies": ["BL-011"],
+      "test_cases": ["T-023"]
     },
     {
       "id": "BL-013",
-      "title": "Integration layer (orchestration)",
+      "title": "Background worker — message handlers + orchestration",
       "status": "todo",
-      "description": "analyzer.ts orchestrates full flow: read keys from storage, parse URL, fetch PR, process diff, call Claude. Popup App.tsx wires state machine.",
+      "description": "Background service worker handles chrome.runtime.onConnect for streaming analysis and onMessage for one-shots (CHECK_API_KEYS). Orchestrates full pipeline: read keys, parse URL, fetch PR, process diff, call Claude, relay results via port.",
       "acceptance_criteria": [
-        "analyzePr(url) reads keys from storage and runs full pipeline",
-        "Returns typed AnalysisResponse on success",
-        "Throws typed errors for each failure mode",
-        "Popup App.tsx uses state machine: idle -> loading -> success/error",
-        "Retry resets to idle with URL pre-filled"
+        "onConnect handles 'analyze' port",
+        "Sends PROGRESS messages for each pipeline stage",
+        "Sends COMPLETE with full AnalysisResponse",
+        "Sends ERROR with typed error codes",
+        "onMessage handles CHECK_API_KEYS"
       ],
-      "priority": "high",
-      "estimated_effort": "1h",
-      "dependencies": ["BL-007", "BL-009", "BL-010", "BL-011", "BL-012"],
-      "test_cases": ["T-029", "T-030", "T-031"]
+      "priority": "critical",
+      "estimated_effort": "1.5h",
+      "dependencies": ["BL-007", "BL-009"],
+      "test_cases": ["T-024", "T-025"]
     },
     {
       "id": "BL-014",
-      "title": "Content script (optional GitHub PR button)",
+      "title": "Sidebar results UI",
       "status": "todo",
-      "description": "Content script that injects an 'Analyze with GitBrief' button on GitHub PR pages.",
+      "description": "Sidebar components: AnalyzeButton, LoadingState (progress stages), AnalysisResults (summary, key changes, risks, suggestions), ErrorState (retry + settings link).",
       "acceptance_criteria": [
-        "Injects button near PR title on /pull/ pages",
-        "Clicking opens the popup or triggers analysis",
-        "Only runs on github.com/*/pull/* pages"
+        "AnalyzeButton triggers analysis via port",
+        "LoadingState shows progress stages",
+        "AnalysisResults renders all sections with severity/impact badges",
+        "ErrorState shows retry button and settings link for key errors",
+        "Scrollable within sidebar"
       ],
-      "priority": "low",
+      "priority": "high",
       "estimated_effort": "1h",
-      "dependencies": ["BL-013"],
-      "test_cases": ["T-032"]
+      "dependencies": ["BL-012"],
+      "test_cases": ["T-026", "T-027", "T-028"]
     },
     {
       "id": "BL-015",
+      "title": "Claude streaming + progressive relay",
+      "status": "todo",
+      "description": "Add analyzeWithClaudeStream() using stream:true. Parses SSE events from ReadableStream. Background worker relays STREAM_CHUNK messages to sidebar via port. Sidebar shows streaming progress.",
+      "acceptance_criteria": [
+        "Sends stream:true to Anthropic API",
+        "Parses content_block_delta SSE events",
+        "Relays text chunks to content script",
+        "Parses final accumulated JSON on message_stop",
+        "Falls back to non-streaming on error"
+      ],
+      "priority": "high",
+      "estimated_effort": "1.5h",
+      "dependencies": ["BL-013"],
+      "test_cases": ["T-029", "T-030"]
+    },
+    {
+      "id": "BL-016",
+      "title": "End-to-end integration + polish",
+      "status": "todo",
+      "description": "Wire everything together. Test on real PRs. Handle edge cases: large diffs, rate limiting, private repos, network errors. Keyboard shortcut for sidebar toggle.",
+      "acceptance_criteria": [
+        "Full flow works on real GitHub PRs",
+        "Large diffs handled gracefully",
+        "Private repo without token shows helpful error",
+        "Rate limit errors surfaced to user",
+        "Sidebar does not break GitHub layout"
+      ],
+      "priority": "high",
+      "estimated_effort": "2h",
+      "dependencies": ["BL-015"],
+      "test_cases": ["T-031"]
+    },
+    {
+      "id": "BL-017",
       "title": "CI pipeline + Chrome Web Store packaging",
       "status": "todo",
-      "description": "GitHub Actions CI (lint, typecheck, test). Build produces ZIP for Chrome Web Store.",
+      "description": "GitHub Actions CI (lint, typecheck, test). Build produces ZIP for Chrome Web Store. Update README.",
       "acceptance_criteria": [
-        "CI runs lint, typecheck, test in parallel on PRs",
-        "Build produces dist/ directory",
-        "Package step creates gitbrief-extension.zip"
+        "CI runs lint, typecheck, test on PRs",
+        "Build produces valid dist/",
+        "Package creates gitbrief-extension.zip"
       ],
       "priority": "medium",
       "estimated_effort": "45m",
       "dependencies": ["BL-008"],
-      "test_cases": ["T-033"]
+      "test_cases": ["T-032"]
     }
   ]
 }
