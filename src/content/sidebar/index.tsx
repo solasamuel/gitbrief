@@ -14,6 +14,10 @@ const SIDEBAR_STYLES = `
   }
 `;
 
+export function isSidebarMounted(): boolean {
+  return !!document.getElementById("gitbrief-root");
+}
+
 export function mountSidebar(): void {
   if (document.getElementById("gitbrief-root")) return;
 
@@ -39,10 +43,12 @@ export function mountSidebar(): void {
 
   document.body.appendChild(host);
 
+  const prUrl = window.location.href;
+
   root = ReactDOM.createRoot(mountPoint);
   root.render(
     <React.StrictMode>
-      <Sidebar />
+      <Sidebar prUrl={prUrl} />
     </React.StrictMode>,
   );
 }

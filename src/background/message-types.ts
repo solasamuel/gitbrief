@@ -9,7 +9,8 @@ export type ProgressStage =
 
 export type BackgroundMessage =
   | { type: "START_ANALYSIS"; prUrl: string }
-  | { type: "CHECK_API_KEYS" };
+  | { type: "CHECK_API_KEYS" }
+  | { type: "OPEN_SETTINGS" };
 
 export type ContentMessage =
   | { type: "PROGRESS"; stage: ProgressStage }

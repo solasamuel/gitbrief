@@ -1,9 +1,22 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act } from "@testing-library/react";
 import { mountSidebar, unmountSidebar } from "@/content/sidebar/index";
 
 beforeEach(() => {
   document.body.innerHTML = "";
+
+  vi.stubGlobal("chrome", {
+    runtime: {
+      sendMessage: vi.fn((_msg: unknown, callback?: (resp: unknown) => void) => {
+        if (callback) callback({ hasKeys: true });
+      }),
+      connect: vi.fn(() => ({
+        postMessage: vi.fn(),
+        onMessage: { addListener: vi.fn() },
+        disconnect: vi.fn(),
+      })),
+    },
+  });
 });
 
 afterEach(async () => {

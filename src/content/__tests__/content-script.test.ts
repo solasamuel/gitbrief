@@ -7,6 +7,13 @@ import {
   resetState,
 } from "@/content/content-script";
 
+// Mock the sidebar module to avoid chrome.runtime dependency in unit tests
+vi.mock("@/content/sidebar/index", () => ({
+  mountSidebar: vi.fn(),
+  unmountSidebar: vi.fn(),
+  isSidebarMounted: vi.fn(() => false),
+}));
+
 beforeEach(() => {
   document.body.innerHTML = "";
   resetState();

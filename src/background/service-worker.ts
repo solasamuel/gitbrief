@@ -1,9 +1,15 @@
-import { analyzePr } from "@/lib/analyzer";
 import { getApiKeys } from "@/lib/storage";
+import { parsePrUrl } from "@/lib/parse-pr-url";
+import { fetchPrMetadata, fetchPrDiff } from "@/lib/github-client";
+import { filterDiff, truncateDiff, extractDiffStats } from "@/lib/diff-utils";
+import { buildAnalysisPrompt } from "@/lib/prompt-builder";
+import { analyzeWithClaudeStream } from "@/lib/claude-client";
 import { GitHubApiError, ClaudeApiError, ClaudeParseError, ParseUrlError } from "@/lib/errors";
 import type { BackgroundMessage, ContentMessage } from "./message-types";
 
-function errorToCode(err: unknown): ContentMessage & { type: "ERROR" } {
+const MODEL = "claude-sonnet-4-20250514";
+
+function errorToMessage(err: unknown): ContentMessage & { type: "ERROR" } {
   if (err instanceof ParseUrlError) {
     return { type: "ERROR", error: err.message, code: "INVALID_URL" };
   }
@@ -26,13 +32,51 @@ chrome.runtime.onConnect.addListener((port) => {
     if (msg.type !== "START_ANALYSIS") return;
 
     try {
-      const result = await analyzePr(msg.prUrl, (stage) => {
-        port.postMessage({ type: "PROGRESS", stage } as ContentMessage);
+      const keys = await getApiKeys();
+      if (!keys.anthropicKey) {
+        port.postMessage({
+          type: "ERROR",
+          error: "No API key configured. Click the GitBrief icon to open settings.",
+          code: "CLAUDE_ERROR",
+        } as ContentMessage);
+        return;
+      }
+
+      port.postMessage({ type: "PROGRESS", stage: "parsing_url" } as ContentMessage);
+      const ref = parsePrUrl(msg.prUrl);
+
+      port.postMessage({ type: "PROGRESS", stage: "fetching_metadata" } as ContentMessage);
+      const metadata = await fetchPrMetadata(ref.owner, ref.repo, ref.pullNumber, keys.githubToken);
+
+      port.postMessage({ type: "PROGRESS", stage: "fetching_diff" } as ContentMessage);
+      const rawDiff = await fetchPrDiff(ref.owner, ref.repo, ref.pullNumber, keys.githubToken);
+
+      port.postMessage({ type: "PROGRESS", stage: "processing_diff" } as ContentMessage);
+      const filtered = filterDiff(rawDiff);
+      const processed = truncateDiff(filtered);
+      const stats = extractDiffStats(filtered);
+      const prompt = buildAnalysisPrompt(metadata, processed);
+
+      port.postMessage({ type: "PROGRESS", stage: "analyzing" } as ContentMessage);
+      const analysis = await analyzeWithClaudeStream(prompt, keys.anthropicKey, (chunk) => {
+        port.postMessage({ type: "STREAM_CHUNK", text: chunk } as ContentMessage);
       });
 
-      port.postMessage({ type: "COMPLETE", data: result } as ContentMessage);
+      port.postMessage({
+        type: "COMPLETE",
+        data: {
+          metadata,
+          stats,
+          analysis,
+          meta: {
+            diffTruncated: processed.includes("[truncated]"),
+            filesAnalyzed: stats.filesChanged,
+            model: MODEL,
+          },
+        },
+      } as ContentMessage);
     } catch (err) {
-      port.postMessage(errorToCode(err));
+      port.postMessage(errorToMessage(err));
     }
   });
 });
@@ -43,7 +87,11 @@ chrome.runtime.onMessage.addListener(
       getApiKeys().then((keys) => {
         sendResponse({ hasKeys: !!keys.anthropicKey });
       });
-      return true; // keep channel open for async response
+      return true;
+    }
+    if (msg.type === "OPEN_SETTINGS") {
+      chrome.action.openPopup();
+      return false;
     }
   },
 );
