@@ -25,5 +25,12 @@
   "background": {
     "service_worker": "src/background/service-worker.ts",
     "type": "module"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*/pull/*"],
+      "js": ["src/content/content-script.ts"],
+      "run_at": "document_idle"
+    }
+  ]
 }
