@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/solasamuel/repos/gitbrief log --oneline -5)",
+      "Bash(git -C /Users/solasamuel/repos/gitbrief remote -v)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git merge:*)"
+    ]
+  }
+}

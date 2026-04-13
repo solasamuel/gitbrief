@@ -1,240 +1,203 @@
 {
   "project": "GitBrief",
-  "version": "1.0.0",
+  "version": "2.1.0",
+  "description": "Chrome Extension (Manifest V3) — sidebar-first AI-powered GitHub PR explainer. Users provide their own API keys.",
   "backlog": [
     {
       "id": "BL-001",
       "title": "Project scaffolding and tooling",
-      "description": "Initialize Next.js 15 with TypeScript, Tailwind CSS v4, Vitest, ESLint. Configure vitest.config.ts and CI-ready scripts.",
-      "acceptance_criteria": [
-        "npm run dev starts without errors",
-        "npm run build produces a production build",
-        "npm run test runs Vitest (exit 0)",
-        "npm run lint runs ESLint with zero errors",
-        "npm run typecheck runs tsc --noEmit with zero errors",
-        "Tailwind utility classes render correctly"
-      ],
-      "priority": "critical",
-      "estimated_effort": "1h",
-      "dependencies": [],
+      "status": "done",
       "test_cases": ["T-001"]
     },
     {
       "id": "BL-002",
       "title": "PR URL parser",
-      "description": "Pure function parsePrUrl(input) that extracts {owner, repo, pullNumber} from a GitHub PR URL. Handles variations and rejects invalid input.",
-      "acceptance_criteria": [
-        "Parses standard GitHub PR URLs",
-        "Handles trailing slashes, query strings, fragments",
-        "Rejects non-GitHub URLs with descriptive error",
-        "Rejects non-PR GitHub URLs",
-        "Returns typed PrReference object"
-      ],
-      "priority": "critical",
-      "estimated_effort": "30m",
-      "dependencies": ["BL-001"],
+      "status": "done",
       "test_cases": ["T-002", "T-003", "T-004"]
     },
     {
       "id": "BL-003",
       "title": "GitHub API client — PR metadata",
-      "description": "Fetch PR metadata (title, body, author, branches, state) from GitHub REST API v3. Optional auth token for higher rate limits.",
-      "acceptance_criteria": [
-        "Fetches from GET /repos/{owner}/{repo}/pulls/{pull_number}",
-        "Returns typed PrMetadata object",
-        "Sends Authorization header when token provided",
-        "Throws GitHubApiError on 404 and 403",
-        "Sets correct Accept header"
-      ],
-      "priority": "critical",
-      "estimated_effort": "45m",
-      "dependencies": ["BL-001"],
+      "status": "done",
       "test_cases": ["T-005", "T-006", "T-007"]
     },
     {
       "id": "BL-004",
       "title": "GitHub API client — PR diff",
-      "description": "Extend GitHub client to fetch raw unified diff for a PR using the diff media type.",
-      "acceptance_criteria": [
-        "Fetches diff with Accept: application/vnd.github.v3.diff",
-        "Returns raw diff string",
-        "Handles empty diffs"
-      ],
-      "priority": "critical",
-      "estimated_effort": "30m",
-      "dependencies": ["BL-003"],
+      "status": "done",
       "test_cases": ["T-008", "T-009"]
     },
     {
       "id": "BL-005",
       "title": "Diff processing utilities",
-      "description": "Pure functions: truncateDiff (char limit at hunk boundaries), filterDiff (remove lock/binary files), extractDiffStats (count files/insertions/deletions).",
-      "acceptance_criteria": [
-        "truncateDiff cuts at hunk boundaries, appends [truncated] marker",
-        "filterDiff removes lock files, binary markers, configurable patterns",
-        "extractDiffStats returns accurate counts",
-        "All functions are pure"
-      ],
-      "priority": "critical",
-      "estimated_effort": "1h",
-      "dependencies": ["BL-001"],
+      "status": "done",
       "test_cases": ["T-010", "T-011", "T-012", "T-013"]
     },
     {
       "id": "BL-006",
       "title": "Claude prompt builder",
-      "description": "Pure function buildAnalysisPrompt that takes PrMetadata and processed diff, returns system+user message pair instructing Claude to return structured JSON.",
-      "acceptance_criteria": [
-        "Returns {system, user} message pair",
-        "System prompt defines JSON schema",
-        "User message includes PR metadata and diff",
-        "Handles empty PR description gracefully"
-      ],
-      "priority": "critical",
-      "estimated_effort": "30m",
-      "dependencies": ["BL-001"],
+      "status": "done",
       "test_cases": ["T-014", "T-015"]
     },
     {
       "id": "BL-007",
-      "title": "Claude API client",
-      "description": "Client using @anthropic-ai/sdk to send analysis prompt and parse structured JSON response. Uses claude-sonnet-4-20250514.",
-      "acceptance_criteria": [
-        "Sends messages via Anthropic SDK",
-        "Parses text response as JSON into AnalysisResult",
-        "Throws ClaudeParseError on invalid JSON",
-        "Throws ClaudeApiError on SDK errors",
-        "Uses max_tokens: 4096"
-      ],
-      "priority": "critical",
-      "estimated_effort": "45m",
-      "dependencies": ["BL-006"],
+      "title": "Claude API client (raw fetch)",
+      "status": "done",
       "test_cases": ["T-016", "T-017", "T-018"]
     },
     {
       "id": "BL-008",
-      "title": "POST /api/analyze route",
-      "description": "Next.js API route orchestrating the full flow: validate input, parse URL, fetch PR, process diff, call Claude, return analysis.",
-      "acceptance_criteria": [
-        "POST accepts {url: string}",
-        "Returns 200 with full AnalysisResponse on success",
-        "Returns 400 for invalid/missing URL",
-        "Returns 502 for GitHub/Claude failures",
-        "All errors return {error, code} shape"
-      ],
-      "priority": "critical",
-      "estimated_effort": "1h",
-      "dependencies": ["BL-002", "BL-004", "BL-005", "BL-007"],
-      "test_cases": ["T-019", "T-020", "T-021", "T-022"]
+      "title": "Extension scaffold (Manifest V3 + Vite + CRXJS)",
+      "status": "done",
+      "test_cases": ["T-019"]
     },
     {
       "id": "BL-009",
-      "title": "UI — PR URL input form",
-      "description": "PrUrlForm component: text input + submit button. Client-side URL validation. Uses shadcn/ui Input and Button.",
+      "title": "Storage module (chrome.storage.sync)",
+      "status": "done",
+      "description": "Typed wrapper around chrome.storage.sync. Functions: getApiKeys(), setApiKeys(), clearApiKeys(). Uses sync so keys persist across devices.",
       "acceptance_criteria": [
-        "Renders input and submit button",
-        "Disables submit when empty",
-        "Shows inline validation error for invalid URLs on blur",
-        "Calls onSubmit with trimmed URL",
-        "Disables when isLoading is true",
-        "Enter key submits"
+        "getApiKeys() returns typed {anthropicKey?, githubToken?}",
+        "setApiKeys() persists to chrome.storage.sync",
+        "clearApiKeys() removes stored keys"
       ],
-      "priority": "high",
-      "estimated_effort": "45m",
-      "dependencies": ["BL-001", "BL-002"],
-      "test_cases": ["T-023", "T-024"]
+      "priority": "critical",
+      "estimated_effort": "30m",
+      "dependencies": ["BL-008"],
+      "test_cases": ["T-020"]
     },
     {
       "id": "BL-010",
-      "title": "UI — Loading state",
-      "description": "AnalysisLoading component: skeleton/spinner with status message while analysis is in progress.",
+      "title": "Popup as settings-only page",
+      "status": "done",
+      "description": "Rewrite popup to be settings-only. Two input fields (Anthropic API key required, GitHub token optional). Save/clear buttons. Masked display. Remove options page.",
       "acceptance_criteria": [
-        "Shows spinner or skeleton UI",
-        "Displays status text",
-        "Has aria-busy and aria-live attributes"
+        "Two password inputs (Anthropic key, GitHub token)",
+        "Save persists to chrome.storage.sync",
+        "Existing keys pre-populated (masked)",
+        "Clear button removes keys",
+        "Success/error feedback"
       ],
-      "priority": "high",
-      "estimated_effort": "20m",
-      "dependencies": ["BL-001"],
-      "test_cases": ["T-025"]
+      "priority": "critical",
+      "estimated_effort": "45m",
+      "dependencies": ["BL-009"],
+      "test_cases": ["T-021"]
     },
     {
       "id": "BL-011",
-      "title": "UI — Analysis results display",
-      "description": "AnalysisResults component: renders summary, key changes, risks (color-coded by severity), and suggestions. Uses shadcn/ui Card and Badge.",
+      "title": "Content script — PR detection + toggle button",
+      "status": "done",
+      "description": "Content script runs on github.com/*/pull/*. Detects PR pages via turbo:load + MutationObserver + popstate. Injects GitBrief toggle button into PR header using GitHub's own btn classes.",
       "acceptance_criteria": [
-        "Renders summary paragraph",
-        "Renders key changes with file references",
-        "Renders risks with severity badges",
-        "Renders suggestions list",
-        "Shows PR metadata header",
-        "Handles empty arrays gracefully",
-        "Responsive layout"
+        "Detects PR pages on initial load and SPA navigation",
+        "Injects toggle button into .gh-header-actions",
+        "Removes button when navigating away from PR pages",
+        "Handles GitHub's Turbo Drive SPA navigation"
       ],
-      "priority": "high",
+      "priority": "critical",
       "estimated_effort": "1h",
-      "dependencies": ["BL-001"],
-      "test_cases": ["T-026", "T-027"]
+      "dependencies": ["BL-008"],
+      "test_cases": ["T-022"]
     },
     {
       "id": "BL-012",
-      "title": "UI — Error display",
-      "description": "ErrorDisplay component: user-friendly error messages mapped from error codes, with retry button.",
+      "title": "Sidebar shell — shadow DOM + React mount",
+      "status": "done",
+      "description": "Shadow DOM container for sidebar. React app mounted inside shadow root. Tailwind CSS injected via ?inline import. 350px wide fixed panel on right side. State machine: idle/no-keys/loading/streaming/success/error.",
       "acceptance_criteria": [
-        "Displays error in styled alert",
-        "Maps error codes to friendly messages",
-        "Has retry button calling onRetry",
-        "Has role=alert"
+        "Shadow DOM isolates sidebar styles from GitHub",
+        "React renders inside shadow root",
+        "Tailwind utilities work inside shadow DOM",
+        "Sidebar toggles open/closed via button click",
+        "350px wide, full viewport height, fixed position"
       ],
-      "priority": "high",
-      "estimated_effort": "30m",
-      "dependencies": ["BL-001"],
-      "test_cases": ["T-028"]
+      "priority": "critical",
+      "estimated_effort": "1.5h",
+      "dependencies": ["BL-011"],
+      "test_cases": ["T-023"]
     },
     {
       "id": "BL-013",
-      "title": "Main page — full flow integration",
-      "description": "Wire all components on page.tsx. State machine: idle -> loading -> success/error. Calls POST /api/analyze.",
+      "title": "Background worker — message handlers + orchestration",
+      "status": "done",
+      "description": "Background service worker handles chrome.runtime.onConnect for streaming analysis and onMessage for one-shots (CHECK_API_KEYS). Orchestrates full pipeline: read keys, parse URL, fetch PR, process diff, call Claude, relay results via port.",
       "acceptance_criteria": [
-        "Renders form in idle state",
-        "Shows loading on submit",
-        "Shows results on success",
-        "Shows error on failure",
-        "Retry resets to idle with URL pre-filled"
+        "onConnect handles 'analyze' port",
+        "Sends PROGRESS messages for each pipeline stage",
+        "Sends COMPLETE with full AnalysisResponse",
+        "Sends ERROR with typed error codes",
+        "onMessage handles CHECK_API_KEYS"
       ],
-      "priority": "high",
-      "estimated_effort": "45m",
-      "dependencies": ["BL-008", "BL-009", "BL-010", "BL-011", "BL-012"],
-      "test_cases": ["T-029", "T-030"]
+      "priority": "critical",
+      "estimated_effort": "1.5h",
+      "dependencies": ["BL-007", "BL-009"],
+      "test_cases": ["T-024", "T-025"]
     },
     {
       "id": "BL-014",
-      "title": "CI/CD pipeline",
-      "description": "GitHub Actions: CI (lint, typecheck, test on PRs) and CD (deploy to Vercel on merge to main).",
+      "title": "Sidebar results UI",
+      "status": "done",
+      "description": "Sidebar components: AnalyzeButton, LoadingState (progress stages), AnalysisResults (summary, key changes, risks, suggestions), ErrorState (retry + settings link).",
       "acceptance_criteria": [
-        "CI runs on PRs to develop and main",
-        "CI runs lint, typecheck, test in parallel",
-        "CD triggers on push to main",
-        "CD deploys to Vercel"
+        "AnalyzeButton triggers analysis via port",
+        "LoadingState shows progress stages",
+        "AnalysisResults renders all sections with severity/impact badges",
+        "ErrorState shows retry button and settings link for key errors",
+        "Scrollable within sidebar"
       ],
       "priority": "high",
-      "estimated_effort": "45m",
-      "dependencies": ["BL-001"],
-      "test_cases": ["T-031"]
+      "estimated_effort": "1h",
+      "dependencies": ["BL-012"],
+      "test_cases": ["T-026", "T-027", "T-028"]
     },
     {
       "id": "BL-015",
-      "title": "Polish — rate limiting, metadata, README",
-      "description": "In-memory rate limiter (10 req/min per IP), OpenGraph tags, favicon, comprehensive README.",
+      "title": "Claude streaming + progressive relay",
+      "status": "done",
+      "description": "Add analyzeWithClaudeStream() using stream:true. Parses SSE events from ReadableStream. Background worker relays STREAM_CHUNK messages to sidebar via port. Sidebar shows streaming progress.",
       "acceptance_criteria": [
-        "API returns 429 over rate limit",
-        "Page has OpenGraph tags",
-        "README covers setup, env vars, dev, testing, deployment"
+        "Sends stream:true to Anthropic API",
+        "Parses content_block_delta SSE events",
+        "Relays text chunks to content script",
+        "Parses final accumulated JSON on message_stop",
+        "Falls back to non-streaming on error"
+      ],
+      "priority": "high",
+      "estimated_effort": "1.5h",
+      "dependencies": ["BL-013"],
+      "test_cases": ["T-029", "T-030"]
+    },
+    {
+      "id": "BL-016",
+      "title": "End-to-end integration + polish",
+      "status": "done",
+      "description": "Wire everything together. Test on real PRs. Handle edge cases: large diffs, rate limiting, private repos, network errors. Keyboard shortcut for sidebar toggle.",
+      "acceptance_criteria": [
+        "Full flow works on real GitHub PRs",
+        "Large diffs handled gracefully",
+        "Private repo without token shows helpful error",
+        "Rate limit errors surfaced to user",
+        "Sidebar does not break GitHub layout"
+      ],
+      "priority": "high",
+      "estimated_effort": "2h",
+      "dependencies": ["BL-015"],
+      "test_cases": ["T-031"]
+    },
+    {
+      "id": "BL-017",
+      "title": "CI pipeline + Chrome Web Store packaging",
+      "status": "done",
+      "description": "GitHub Actions CI (lint, typecheck, test). Build produces ZIP for Chrome Web Store. Update README.",
+      "acceptance_criteria": [
+        "CI runs lint, typecheck, test on PRs",
+        "Build produces valid dist/",
+        "Package creates gitbrief-extension.zip"
       ],
       "priority": "medium",
       "estimated_effort": "45m",
-      "dependencies": ["BL-013", "BL-014"],
-      "test_cases": ["T-032", "T-033"]
+      "dependencies": ["BL-008"],
+      "test_cases": ["T-032"]
     }
   ]
 }
