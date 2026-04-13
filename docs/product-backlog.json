@@ -54,7 +54,7 @@
     {
       "id": "BL-009",
       "title": "Storage module (chrome.storage.sync)",
-      "status": "todo",
+      "status": "done",
       "description": "Typed wrapper around chrome.storage.sync. Functions: getApiKeys(), setApiKeys(), clearApiKeys(). Uses sync so keys persist across devices.",
       "acceptance_criteria": [
         "getApiKeys() returns typed {anthropicKey?, githubToken?}",
@@ -69,7 +69,7 @@
     {
       "id": "BL-010",
       "title": "Popup as settings-only page",
-      "status": "todo",
+      "status": "done",
       "description": "Rewrite popup to be settings-only. Two input fields (Anthropic API key required, GitHub token optional). Save/clear buttons. Masked display. Remove options page.",
       "acceptance_criteria": [
         "Two password inputs (Anthropic key, GitHub token)",
@@ -86,7 +86,7 @@
     {
       "id": "BL-011",
       "title": "Content script — PR detection + toggle button",
-      "status": "todo",
+      "status": "done",
       "description": "Content script runs on github.com/*/pull/*. Detects PR pages via turbo:load + MutationObserver + popstate. Injects GitBrief toggle button into PR header using GitHub's own btn classes.",
       "acceptance_criteria": [
         "Detects PR pages on initial load and SPA navigation",
@@ -102,7 +102,7 @@
     {
       "id": "BL-012",
       "title": "Sidebar shell — shadow DOM + React mount",
-      "status": "todo",
+      "status": "done",
       "description": "Shadow DOM container for sidebar. React app mounted inside shadow root. Tailwind CSS injected via ?inline import. 350px wide fixed panel on right side. State machine: idle/no-keys/loading/streaming/success/error.",
       "acceptance_criteria": [
         "Shadow DOM isolates sidebar styles from GitHub",
@@ -119,7 +119,7 @@
     {
       "id": "BL-013",
       "title": "Background worker — message handlers + orchestration",
-      "status": "todo",
+      "status": "done",
       "description": "Background service worker handles chrome.runtime.onConnect for streaming analysis and onMessage for one-shots (CHECK_API_KEYS). Orchestrates full pipeline: read keys, parse URL, fetch PR, process diff, call Claude, relay results via port.",
       "acceptance_criteria": [
         "onConnect handles 'analyze' port",
@@ -136,7 +136,7 @@
     {
       "id": "BL-014",
       "title": "Sidebar results UI",
-      "status": "todo",
+      "status": "done",
       "description": "Sidebar components: AnalyzeButton, LoadingState (progress stages), AnalysisResults (summary, key changes, risks, suggestions), ErrorState (retry + settings link).",
       "acceptance_criteria": [
         "AnalyzeButton triggers analysis via port",
@@ -153,7 +153,7 @@
     {
       "id": "BL-015",
       "title": "Claude streaming + progressive relay",
-      "status": "todo",
+      "status": "done",
       "description": "Add analyzeWithClaudeStream() using stream:true. Parses SSE events from ReadableStream. Background worker relays STREAM_CHUNK messages to sidebar via port. Sidebar shows streaming progress.",
       "acceptance_criteria": [
         "Sends stream:true to Anthropic API",
@@ -170,7 +170,7 @@
     {
       "id": "BL-016",
       "title": "End-to-end integration + polish",
-      "status": "todo",
+      "status": "done",
       "description": "Wire everything together. Test on real PRs. Handle edge cases: large diffs, rate limiting, private repos, network errors. Keyboard shortcut for sidebar toggle.",
       "acceptance_criteria": [
         "Full flow works on real GitHub PRs",
@@ -187,7 +187,7 @@
     {
       "id": "BL-017",
       "title": "CI pipeline + Chrome Web Store packaging",
-      "status": "todo",
+      "status": "done",
       "description": "GitHub Actions CI (lint, typecheck, test). Build produces ZIP for Chrome Web Store. Update README.",
       "acceptance_criteria": [
         "CI runs lint, typecheck, test on PRs",
