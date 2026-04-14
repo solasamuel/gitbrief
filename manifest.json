@@ -3,7 +3,7 @@
   "name": "GitBrief",
   "version": "1.0.0",
   "description": "AI-powered GitHub PR explainer & review assistant",
-  "permissions": ["storage", "activeTab", "tabs"],
+  "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://github.com/*",
     "https://api.github.com/*",
