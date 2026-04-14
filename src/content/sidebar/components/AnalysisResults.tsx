@@ -24,13 +24,13 @@ export default function AnalysisResults({ data }: Props) {
       {/* PR Header */}
       <div style={{ marginBottom: "12px", paddingBottom: "8px", borderBottom: "1px solid #d0d7de" }}>
         <div style={{ fontWeight: 600, fontSize: "14px" }}>{metadata.title}</div>
-        <div style={{ color: "#656d76", fontSize: "12px", marginTop: "2px" }}>
-          {metadata.author} &middot; {stats.filesChanged} files changed &middot;
-          <span style={{ color: "#1a7f37" }}> +{stats.insertions}</span>
-          <span style={{ color: "#cf222e" }}> -{stats.deletions}</span>
+        <div style={{ color: "#656d76", fontSize: "12px", marginTop: "4px" }}>
+          {metadata.author} &middot; {metadata.baseBranch} ← {metadata.headBranch}
         </div>
-        <div style={{ color: "#656d76", fontSize: "12px" }}>
-          {stats.filesChanged} files &middot; {metadata.baseBranch} ← {metadata.headBranch}
+        <div style={{ fontSize: "12px", marginTop: "4px", display: "flex", gap: "8px" }}>
+          <span style={{ color: "#656d76" }}>{stats.filesChanged} files</span>
+          <span style={{ color: "#1a7f37" }}>+{stats.insertions}</span>
+          <span style={{ color: "#cf222e" }}>-{stats.deletions}</span>
         </div>
       </div>
 

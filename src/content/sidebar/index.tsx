@@ -48,7 +48,7 @@ export function mountSidebar(): void {
   root = ReactDOM.createRoot(mountPoint);
   root.render(
     <React.StrictMode>
-      <Sidebar prUrl={prUrl} />
+      <Sidebar prUrl={prUrl} onClose={unmountSidebar} />
     </React.StrictMode>,
   );
 }
